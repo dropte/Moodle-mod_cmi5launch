@@ -26,7 +26,8 @@ namespace mod_cmi5launch\local;
 defined('MOODLE_INTERNAL') || die();
 
 use mod_cmi5launch\local\session_helpers;
-require_once ($CFG->dirroot . '/mod/cmi5launch/classes/local/errorover.php');
+
+require_once($CFG->dirroot . '/mod/cmi5launch/classes/local/errorover.php');
 
 class grade_helpers
 {
@@ -72,15 +73,12 @@ class grade_helpers
 
             // Find the average of the scores.
             $averagegrade = (array_sum($scores) / count($scores));
-
         } else if (!$scores == null && !is_array($scores)) {
 
             // If it's an int, it's a single value so average is itself.
             $averagegrade = $scores;
-
         } else {
             $averagegrade = 0;
-
         }
 
         // Now apply intval.
@@ -90,49 +88,11 @@ class grade_helpers
     }
 
     /**
-     * Takes in an array of scores and returns the highest grade.
-     * @param mixed $scores
-     * @return int
-     */
-    public function cmi5launch_highest_grade($scores)
-    {
-
-        global $cmi5launch, $USER, $DB;
-
-        // Highest equals 0 to start.
-        $highestgrade = 0;
-
-        // First check if scores is a string, if a string we need it to be array.
-        if (is_string($scores)) {
-            $scores = json_decode($scores, true);
-        }
-
-        if (!$scores == null && is_array($scores)) {
-
-            // Find the highest grade.
-            $highestgrade = max($scores);
-
-        } else if ($scores > $highestgrade && !is_array($scores)) {
-
-            // If it's an int, it's a single value so highest is itself.
-            $highestgrade = $scores;
-        }
-
-        // Now apply intval.
-        $highestgrade = intval($highestgrade);
-
-     
-
-        return $highestgrade;
-    }
-
-
-    /**
      * Parses and retrieves AUs and their sessions from the returned info from CMI5 player and LRS and updates them.
      * @param array $user - the user whose grades are being updated.
      * @return array
      */
-    public function cmi5launch_check_user_grades_for_updates($user, )
+    public function cmi5launch_check_user_grades_for_updates($user,)
     {
 
         global $cmi5launch, $USER, $DB;
@@ -150,10 +110,10 @@ class grade_helpers
 
                 // Retrieve the record.
                 $userscourse = $DB->get_record('cmi5launch_usercourse', ['courseid' => $cmi5launch->courseid, 'userid' => $user->id]);
-                
+
                 $auids = json_decode($userscourse->aus);
 
-               // Bring in functions and classes.
+                // Bring in functions and classes.
                 $sessionhelper = new session_helpers;
 
                 $returnedinfo = $this->cmi5launch_update_au_for_user_grades($sessionhelper, $auids, $user);
@@ -169,21 +129,19 @@ class grade_helpers
                 restore_error_handler();
                 // Return scores.
                 return $overallgrade;
-
             } else {
-          
+
                 $nograde = array(0 => 'No grades to update. No record for user found in this course.');
                 // Do nothing, there is no record for this user in this course.
                 // Restore default hadlers.
                 restore_exception_handler();
                 restore_error_handler();
                 return $nograde;
-
             }
         } catch (\Throwable $e) {
-         
+
             // If there is an error, return the error.
-            echo" Error in updating or checking user grades. Report this error to system administrator: ". $e->getMessage(); 
+            echo " Error in updating or checking user grades. Report this error to system administrator: " . $e->getMessage();
             // Restore default hadlers.
             restore_exception_handler();
             restore_error_handler();
@@ -205,7 +163,7 @@ class grade_helpers
         // Instantiate progress and cmi5_connectors class to pass.
         $progress = new progress;
         $cmi5 = new cmi5_connectors;
-        
+
         // Set error and exception handler to catch and override the default PHP error messages, to make messages more user friendly.
         set_error_handler('mod_cmi5launch\local\grade_warning', E_WARNING);
         set_exception_handler('mod_cmi5launch\local\exception_grade');
@@ -287,8 +245,8 @@ class grade_helpers
                                 break;
                             default:
 
-                                echo("Gradetype not found.");
-                            }
+                                echo ("Gradetype not found.");
+                        }
 
                         // Save AU scores to corresponding title.
                         $auscores[$aurecord->lmsid] = array($aurecord->title => $aurecord->scores);
@@ -300,7 +258,6 @@ class grade_helpers
                         // Save Au title and their scores to AU.
                         // Save updates to DB.
                         $aurecord = $DB->update_record('cmi5launch_aus', $aurecord);
-
                     }
                 }
             }
@@ -314,13 +271,210 @@ class grade_helpers
 
             return $toreturn;
         } catch (\Throwable $e) {
-            
+
             // Restore default handlers.
             restore_exception_handler();
             restore_error_handler();
 
             // If there is an error, return the error.
-            throw new nullException(" Error in updating or checking user grades. Report this error to system administrator: ". $e->getMessage()); 
+            throw new nullException(" Error in updating or checking user grades. Report this error to system administrator: " . $e->getMessage());
+        }
+    }
+    /**
+     * Takes in an array of scores and returns the highest grade.
+     * @param mixed $scores
+     * @return int
+     */
+    public function cmi5launch_highest_grade($scores)
+    {
+
+        global $cmi5launch, $USER, $DB;
+
+        // Highest equals 0 to start.
+        $highestgrade = 0;
+
+        // First check if scores is a string, if a string we need it to be array.
+        if (is_string($scores)) {
+            $scores = json_decode($scores, true);
+        }
+
+        if (!$scores == null && is_array($scores)) {
+
+            // Find the highest grade.
+            $highestgrade = max($scores);
+        } else if ($scores > $highestgrade && !is_array($scores)) {
+
+            // If it's an int, it's a single value so highest is itself.
+            $highestgrade = $scores;
+        }
+
+        // Now apply intval.
+        $highestgrade = intval($highestgrade);
+
+
+
+        return $highestgrade;
+    }
+
+
+    /**
+     * Web-service safe: checks/updates grades for a specific cmi5launch instance + user
+     * and returns a structured result without echo/print.
+     *
+     * @param \stdClass $cmi5launch  Full row from {cmi5launch} for the instance
+     * @param \stdClass $user        At least ->id
+     * @return array{auscores: array, overallgrade: int, updated: bool}
+     * @throws moodle_exception on fatal errors
+     */
+    public function cmi5launch_check_user_grades_for_updates_ws(\stdClass $cmi5launch, \stdClass $user): array
+    {
+        global $DB, $CFG;
+
+        // Bring dependencies explicitly; avoid any code that reads request params.
+        require_once($CFG->dirroot . '/mod/cmi5launch/classes/local/errorover.php');
+        require_once($CFG->dirroot . '/mod/cmi5launch/lib.php'); // for cmi5launch_settings(), etc.
+
+        // DO NOT echo or rely on page context; trap warnings/exceptions and map to results.
+        set_error_handler('mod_cmi5launch\local\grade_warning', E_WARNING);
+        set_exception_handler('mod_cmi5launch\local\exception_grade');
+
+        try {
+            // Ensure a per-user record exists for this (server) course id.
+            $exists = $DB->record_exists('cmi5launch_usercourse', [
+                'courseid' => $cmi5launch->courseid,
+                'userid'   => $user->id,
+            ]);
+
+            if (!$exists) {
+                // No record to update for this user.
+                restore_exception_handler();
+                restore_error_handler();
+                return [
+                    'auscores'     => [],
+                    'overallgrade' => 0,
+                    'updated'      => false,
+                ];
+            }
+
+            $userscourse = $DB->get_record('cmi5launch_usercourse', [
+                'courseid' => $cmi5launch->courseid,
+                'userid'   => $user->id,
+            ], '*', MUST_EXIST);
+
+            $auids = json_decode($userscourse->aus ?? '[]', true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($auids)) {
+                $auids = [];
+            }
+
+            $cmi5launchsettings = cmi5launch_settings($cmi5launch->id);
+
+            // Instantiate collaborators (ensure classes exist/are autoloaded).
+            $sessionhelper = new session_helpers();
+            $progress      = new progress();
+            $cmi5          = new cmi5_connectors();
+
+            $update_session = $sessionhelper->cmi5launch_get_update_session();
+
+            $auscores     = [];  // map lmsid => [title => json_scores]
+            $overallgrade = 0;
+            $touched      = false;
+
+            foreach ($auids as $auid) {
+                // AU row
+                $aurecord = $DB->get_record('cmi5launch_aus', ['id' => $auid]);
+                if (!$aurecord) {
+                    continue; // user hasn’t launched AU yet or stale id
+                }
+
+                if (!empty($aurecord->sessions)) {
+                    $sessions = json_decode($aurecord->sessions, true) ?: [];
+                    $sessiongrades = [];
+
+                    foreach ($sessions as $sessionid) {
+                        $session = $DB->get_record('cmi5launch_sessions', ['sessionid' => $sessionid]);
+                        if (!$session) {
+                            continue;
+                        }
+
+                        // Update session info from player/LRS without page context.
+                        $session = $update_session($progress, $cmi5, $sessionid, $cmi5launch->id, $user);
+
+                        // Fold terminal flags into AU
+                        if (!empty($session->iscompleted)) {
+                            $aurecord->completed   = 1;
+                        }
+                        if (!empty($session->ispassed)) {
+                            $aurecord->passed      = 1;
+                        }
+                        if (!empty($session->isterminated)) {
+                            $aurecord->terminated  = 1;
+                        }
+
+                        // Collect score
+                        if (isset($session->score)) {
+                            $sessiongrades[] = $session->score;
+                        }
+                    }
+
+                    // Persist session scores to AU (JSON numeric)
+                    $aurecord->scores = json_encode($sessiongrades, JSON_NUMERIC_CHECK);
+
+                    // Calculate overall AU grade according to settings
+                    $gradetype = (int)($cmi5launchsettings['grademethod'] ?? 0);
+                    switch ($gradetype) {
+                        case 1: // highest
+                            $aurecord->grade = $this->cmi5launch_highest_grade($sessiongrades);
+                            break;
+                        case 2: // average
+                            $aurecord->grade = $this->cmi5launch_average_grade($sessiongrades);
+                            break;
+                        case 0: // “AUS” custom rule in your plugin; if not supported, default to highest/avg
+                        case 3: // sum (not implemented above)
+                        default:
+                            // Choose a sane default that won’t echo:
+                            $aurecord->grade = $this->cmi5launch_highest_grade($sessiongrades);
+                            break;
+                    }
+
+                    // Build summary map (aurecord->title may be JSON or text; keep as-is)
+                    $auscores[$aurecord->lmsid] = [
+                        $aurecord->title => $aurecord->scores
+                    ];
+
+                    // Track a course-level grade; take max across AUs by default
+                    $overallgrade = max($overallgrade, (int)$aurecord->grade);
+
+                    // Persist AU updates
+                    $DB->update_record('cmi5launch_aus', $aurecord);
+                    $touched = true;
+                }
+            }
+
+            // Save summary to usercourse row if we touched anything
+            if ($touched) {
+                $userscourse->ausgrades = json_encode($auscores, JSON_UNESCAPED_UNICODE);
+                $DB->update_record('cmi5launch_usercourse', $userscourse);
+            }
+
+            restore_exception_handler();
+            restore_error_handler();
+
+            return [
+                'auscores'     => $auscores,
+                'overallgrade' => (int)$overallgrade,
+                'updated'      => $touched,
+            ];
+        } catch (\Throwable $e) {
+            restore_exception_handler();
+            restore_error_handler();
+            // Don’t echo—surface as an exception for WS layer or wrap in a result
+            throw new moodle_exception(
+                'processingerror',
+                'mod_cmi5launch',
+                '',
+                null,
+                'WS grade update failed: ' . $e->getMessage()
+            );
         }
     }
 }

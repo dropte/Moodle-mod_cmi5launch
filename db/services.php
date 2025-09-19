@@ -25,4 +25,12 @@ $functions = [
         'ajax' => true,
         'capabilities' => 'moodle/course:manageactivities',
     ],
+      'mod_cmi5launch_get_cmi5_course_status' => [
+        'classname' => 'mod_cmi5launch\external\get_cmi5_course_status',
+        'methodname' => 'execute',
+        'description' => 'Get a CMI5 courses current progress',
+        'type' => 'write',
+        'ajax' => true,
+        'capabilities' => 'moodle/course:manageactivities',
+    ],
 ];
