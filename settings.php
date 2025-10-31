@@ -37,13 +37,13 @@ defined('MOODLE_INTERNAL') || die;
     function totokenpage(){
 
         // Post it.
-        $('#settingformtoken').submit();
+        document.getElementById('settingformtoken').submit();
     }
 
     function tosetup(){
 
     // Post it.
-    $('#setupform').submit();
+    document.getElementById('setupform').submit();
     }
 
 </script>
