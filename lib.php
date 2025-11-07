@@ -485,9 +485,9 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     // Build URL - use view.php in embed mode for initialization, otherwise launch.php
                     var url;
                     if (needsInit) {
-                        // Load view.php in embed mode with auindex for auto-launch
-                        url = '/mod/cmi5launch/view.php?embed=1&id=' + cmid + '&auindex=' + auindex;
-                        console.log('Loading view.php in embed mode for initialization');
+                        // Load view.php in embed mode with AU ID for auto-launch after init
+                        url = '/mod/cmi5launch/view.php?embed=1&id=' + cmid + '&launch=' + encodeURIComponent(activity.id);
+                        console.log('Loading view.php in embed mode with AU ID:', activity.id);
                     } else {
                         // Load activity directly via launch.php
                         url = '/mod/cmi5launch/launch.php?launchform_registration=' +
