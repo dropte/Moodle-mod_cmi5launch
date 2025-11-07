@@ -145,22 +145,23 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     try {
                         $au = $getaus($auid);
                         if ($au && isset($au->title)) {
-                            // Determine activity status
-                            // Note: satisfied and inprogress can be strings ("true"/"false") or integers (1/0)
+                            // Determine activity status using same logic as view.php
+                            // If sessions is null, not attempted. If satisfied=true, completed. Otherwise in progress.
 
                             // DEBUG: Log actual values
                             error_log("CMI5 Status Debug for AU {$auid}: satisfied=" .
                                 var_export($au->satisfied ?? 'NOTSET', true) .
-                                ", inprogress=" . var_export($au->inprogress ?? 'NOTSET', true) .
-                                ", noattempt=" . var_export($au->noattempt ?? 'NOTSET', true));
+                                ", sessions=" . var_export($au->sessions ?? 'NOTSET', true));
 
                             $status = 'notstarted';
-                            if (!empty($au->satisfied) && ($au->satisfied === "true" || $au->satisfied === 1 || $au->satisfied === true)) {
+
+                            // Check if activity has been attempted (has sessions)
+                            if ($au->sessions == null || !isset($au->sessions)) {
+                                $status = 'notstarted';
+                            } else if (!empty($au->satisfied) && ($au->satisfied === "true" || $au->satisfied === 1 || $au->satisfied === true)) {
                                 $status = 'completed';
-                            } else if (!empty($au->inprogress) && ($au->inprogress === "true" || $au->inprogress === 1 || $au->inprogress === true)) {
-                                $status = 'inprogress';
-                            } else if (isset($au->noattempt) && ($au->noattempt === "false" || $au->noattempt === 0 || $au->noattempt === false)) {
-                                // If noattempt is false, they've attempted it (in progress)
+                            } else {
+                                // Has sessions but not satisfied = in progress
                                 $status = 'inprogress';
                             }
 
