@@ -203,6 +203,73 @@
     background-color: #0056b3;
 }
 
+/* Enhanced Launch Button Styling */
+.launch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-transform: none;
+}
+
+.launch-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.launch-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.launch-icon {
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.launch-text {
+    font-weight: 600;
+}
+
+/* New activity - green gradient */
+.launch-btn-new {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+}
+
+.launch-btn-new:hover {
+    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+}
+
+/* In progress - blue gradient */
+.launch-btn-progress {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: white;
+}
+
+.launch-btn-progress:hover {
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+}
+
+/* Completed - purple gradient */
+.launch-btn-completed {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.launch-btn-completed:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
 /* Restart button styling */
 .restart-btn {
     background-color: #ef6832;

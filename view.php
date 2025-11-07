@@ -1016,11 +1016,18 @@ try {
         // AU id for next page (to be loaded).
         //  $infofornextpage = $auid;
 
-        // Assign au link to auviews.
-        $auinfo[] = "<button class=\"btn resume-btn\"  tabindex=\"0\" id='cmi5relaunch_attempt'
+        // Assign au link to auviews with styled button
+        $launchButtonText = ($austatus == "Satisfied") ? "Review" : (($austatus == "In Progress") ? "Continue" : "Start");
+        $launchIcon = ($austatus == "Satisfied") ? "✓" : (($austatus == "In Progress") ? "▶" : "▶");
+        $buttonClass = ($austatus == "Satisfied") ? "launch-btn-completed" : (($austatus == "In Progress") ? "launch-btn-progress" : "launch-btn-new");
+
+        $auinfo[] = "<button class=\"btn launch-btn {$buttonClass}\" tabindex=\"0\" id='cmi5relaunch_attempt'
             onkeyup=\"key_test('" . $auid . "')\"
-            onclick=\"mod_cmi5launch_launchexperience('" . $auid . "')\" style='cursor: pointer;'>"
-            . get_string('cmi5launchviewlaunchlink', 'cmi5launch') . "</button>";
+            onclick=\"mod_cmi5launch_launchexperience('" . $auid . "')\"
+            title='Click to launch this activity'>
+            <span class='launch-icon'>{$launchIcon}</span>
+            <span class='launch-text'>{$launchButtonText}</span>
+        </button>";
 
         // Add to be fed to table.
         $tabledata[] = $auinfo;
