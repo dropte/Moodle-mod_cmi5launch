@@ -122,14 +122,19 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
     // Try to load activities
     $activities = array();
+    $userhasstarted = false;
+
     try {
-        // Get user course record to access AUs
+        // Check if user has started (has a user course record with AU IDs)
         $userscourse = $DB->get_record('cmi5launch_usercourse',
             array('courseid' => $cmi5launch->cmi5launchid, 'userid' => $USER->id));
 
         if ($userscourse && !empty($userscourse->aus)) {
+            // User has started - load actual AU IDs from database
+            $userhasstarted = true;
             $auids = json_decode($userscourse->aus);
-            if (is_array($auids)) {
+
+            if ($auids && is_array($auids)) {
                 foreach ($auids as $index => $auid) {
                     try {
                         $au = $getaus($auid);
@@ -145,9 +150,24 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
                 }
             }
+        } else if (!empty($cmi5launch->aus)) {
+            // User hasn't started - parse AU data from manifest for preview
+            $ausdata = json_decode($cmi5launch->aus);
+            if ($ausdata && is_array($ausdata)) {
+                foreach ($ausdata as $index => $audata) {
+                    if (is_object($audata) && isset($audata->title)) {
+                        $activities[] = array(
+                            'id' => 'preview_' . $index,
+                            'title' => $audata->title,
+                            'index' => $index,
+                            'ispreview' => true
+                        );
+                    }
+                }
+            }
         }
     } catch (Exception $e) {
-        // No activities loaded - user probably hasn't started yet
+        // No activities loaded - will show "Begin Exercise" button
     }
 
     // Add accordion toggle button
@@ -182,6 +202,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
         foreach ($activities as $activity) {
             $launchUrl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
+            $ispreview = isset($activity['ispreview']) && $activity['ispreview'] ? 'true' : 'false';
+
             $customhtml .= html_writer::start_div('cmi5-activity-item');
             $customhtml .= html_writer::link(
                 $launchUrl,
@@ -189,9 +211,10 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 html_writer::span($activity['title'], 'activity-title'),
                 array(
                     'class' => 'cmi5-activity-launch',
-                    'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ');',
+                    'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ', ' . $ispreview . ');',
                     'data-auid' => $activity['id'],
-                    'data-auindex' => $activity['index']
+                    'data-auindex' => $activity['index'],
+                    'data-ispreview' => $ispreview
                 )
             );
             $customhtml .= html_writer::end_div();
@@ -225,9 +248,13 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
                 };
 
-                window.launchCMI5Activity = function(cmid, auid, auindex) {
-                    // Navigate to view.php with auto-launch parameter
-                    var url = '/mod/cmi5launch/view.php?id=' + cmid + '&launch=' + auid + '&auindex=' + auindex;
+                window.launchCMI5Activity = function(cmid, auid, auindex, ispreview) {
+                    // If preview (user hasn't started), just go to view.php to initialize
+                    // If not preview (user has started), auto-launch the specific AU
+                    var url = '/mod/cmi5launch/view.php?id=' + cmid;
+                    if (!ispreview) {
+                        url += '&launch=' + auid + '&auindex=' + auindex;
+                    }
                     window.location.href = url;
                     return false;
                 };
