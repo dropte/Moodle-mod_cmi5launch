@@ -196,12 +196,13 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
                     $title = '';
                     $auid = '';
+                    $aulmsid = '';
 
                     // Try to extract title and ID from various possible structures
                     if (is_object($au)) {
-                        // Extract AU ID
+                        // Extract LMS ID (the URL from manifest) - this is NOT the database ID
                         if (isset($au->id)) {
-                            $auid = $au->id;
+                            $aulmsid = $au->id;
                         }
 
                         if (isset($au->title)) {
@@ -231,9 +232,33 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         $title = 'Activity ' . ($index + 1);
                     }
 
-                    // Fallback ID if not found
+                    // Look up the database AU ID using the lmsid or index
                     if (empty($auid)) {
-                        $auid = 'au_' . $index;
+                        global $DB;
+                        // Try to find AU by lmsid first
+                        if (!empty($aulmsid)) {
+                            $dbau = $DB->get_record('cmi5launch_aus', array(
+                                'lmsid' => $aulmsid,
+                                'moodlecourseid' => $cmi5launch->id
+                            ));
+                            if ($dbau) {
+                                $auid = $dbau->id;
+                            }
+                        }
+                        // Fallback: try to find by auindex
+                        if (empty($auid)) {
+                            $dbau = $DB->get_record('cmi5launch_aus', array(
+                                'auindex' => $index,
+                                'moodlecourseid' => $cmi5launch->id
+                            ));
+                            if ($dbau) {
+                                $auid = $dbau->id;
+                            }
+                        }
+                        // Last resort: use index as placeholder (will need initialization)
+                        if (empty($auid)) {
+                            $auid = 'au_' . $index;
+                        }
                     }
 
                     error_log('CMI5: About to add activity with title: ' . $title . ', id: ' . $auid . ', index: ' . $index);
@@ -268,12 +293,13 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
                     $title = '';
                     $auid = '';
+                    $aulmsid = '';
 
                     // Try to extract title and ID from various possible structures
                     if (is_object($au)) {
-                        // Extract AU ID
+                        // Extract LMS ID (the URL from manifest) - this is NOT the database ID
                         if (isset($au->id)) {
-                            $auid = $au->id;
+                            $aulmsid = $au->id;
                         }
 
                         if (isset($au->title)) {
@@ -303,9 +329,33 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         $title = 'Activity ' . ($index + 1);
                     }
 
-                    // Fallback ID if not found
+                    // Look up the database AU ID using the lmsid or index
                     if (empty($auid)) {
-                        $auid = 'au_' . $index;
+                        global $DB;
+                        // Try to find AU by lmsid first
+                        if (!empty($aulmsid)) {
+                            $dbau = $DB->get_record('cmi5launch_aus', array(
+                                'lmsid' => $aulmsid,
+                                'moodlecourseid' => $cmi5launch->id
+                            ));
+                            if ($dbau) {
+                                $auid = $dbau->id;
+                            }
+                        }
+                        // Fallback: try to find by auindex
+                        if (empty($auid)) {
+                            $dbau = $DB->get_record('cmi5launch_aus', array(
+                                'auindex' => $index,
+                                'moodlecourseid' => $cmi5launch->id
+                            ));
+                            if ($dbau) {
+                                $auid = $dbau->id;
+                            }
+                        }
+                        // Last resort: use index as placeholder (will need initialization)
+                        if (empty($auid)) {
+                            $auid = 'au_' . $index;
+                        }
                     }
 
                     error_log('CMI5: About to add activity with title: ' . $title . ', id: ' . $auid . ', index: ' . $index);
