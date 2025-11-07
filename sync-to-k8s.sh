@@ -23,7 +23,12 @@ kubectl cp AUview.php $POD_NAME:$PLUGIN_PATH/AUview.php
 kubectl cp settings.php $POD_NAME:$PLUGIN_PATH/settings.php
 kubectl cp lib.php $POD_NAME:$PLUGIN_PATH/lib.php
 kubectl cp locallib.php $POD_NAME:$PLUGIN_PATH/locallib.php
+kubectl cp admin_dashboard.php $POD_NAME:$PLUGIN_PATH/admin_dashboard.php
+kubectl cp version.php $POD_NAME:$PLUGIN_PATH/version.php
 kubectl cp styles.css $POD_NAME:$PLUGIN_PATH/styles.css
+
+echo "📁 Copying database definition files..."
+kubectl cp db/access.php $POD_NAME:$PLUGIN_PATH/db/access.php
 
 echo "📁 Copying language files..."
 kubectl cp lang/en/cmi5launch.php $POD_NAME:$PLUGIN_PATH/lang/en/cmi5launch.php
@@ -39,4 +44,8 @@ echo "🧹 Clearing Moodle cache..."
 kubectl exec $POD_NAME -- php /var/www/html/admin/cli/purge_caches.php 2>/dev/null || echo "⚠️  Cache purge failed - you may need to do this manually"
 
 echo "✅ Sync complete! Test your changes in Moodle now."
+echo ""
+echo "⚠️  IMPORTANT: Version was updated - you need to upgrade the plugin!"
+echo "   Go to: https://your-moodle/admin/index.php and click 'Upgrade Moodle database now'"
+echo ""
 echo "💡 Tip: Run 'kubectl logs $POD_NAME' to see PHP errors"
