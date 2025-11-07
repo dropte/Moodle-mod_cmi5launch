@@ -989,3 +989,51 @@
     font-weight: 500;
     font-size: 15px;
 }
+
+/* Activity status indicators */
+.activity-status-icon {
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    margin-right: 8px;
+}
+
+.activity-status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Status colors */
+.status-notstarted .activity-status-icon {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.status-notstarted .activity-status-badge {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.status-inprogress .activity-status-icon {
+    color: #4FC3F7;
+}
+
+.status-inprogress .activity-status-badge {
+    background: rgba(79, 195, 247, 0.2);
+    color: #4FC3F7;
+}
+
+.status-completed .activity-status-icon {
+    color: #66BB6A;
+}
+
+.status-completed .activity-status-badge {
+    background: rgba(102, 187, 106, 0.2);
+    color: #66BB6A;
+}

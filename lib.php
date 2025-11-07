@@ -145,10 +145,19 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     try {
                         $au = $getaus($auid);
                         if ($au && isset($au->title)) {
+                            // Determine activity status
+                            $status = 'notstarted';
+                            if (!empty($au->satisfied) && $au->satisfied == 1) {
+                                $status = 'completed';
+                            } else if (!empty($au->inprogress) && $au->inprogress == 1) {
+                                $status = 'inprogress';
+                            }
+
                             $activities[] = array(
                                 'id' => $auid,
                                 'title' => $au->title,
-                                'index' => $index
+                                'index' => $index,
+                                'status' => $status
                             );
                         }
                     } catch (Exception $e) {
@@ -201,7 +210,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         'id' => 'init_' . $index,  // Special ID to indicate needs init
                         'title' => $title,
                         'index' => $index,
-                        'needsinit' => true
+                        'needsinit' => true,
+                        'status' => 'notstarted'  // Fallback activities are always not started
                     );
                     error_log('CMI5: Added activity ' . $index . ': ' . $title);
                 }
@@ -273,17 +283,34 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
         foreach ($activities as $activity) {
             $launchUrl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
             $needsinit = isset($activity['needsinit']) && $activity['needsinit'] ? 'true' : 'false';
+            $status = $activity['status'] ?? 'notstarted';
 
-            $customhtml .= html_writer::start_div('cmi5-activity-item');
+            // Status icons and classes
+            $statusIcon = '○';  // Not started
+            $statusClass = 'status-notstarted';
+            $statusText = 'Not Started';
+            if ($status === 'completed') {
+                $statusIcon = '✓';
+                $statusClass = 'status-completed';
+                $statusText = 'Completed';
+            } else if ($status === 'inprogress') {
+                $statusIcon = '▶';
+                $statusClass = 'status-inprogress';
+                $statusText = 'In Progress';
+            }
+
+            $customhtml .= html_writer::start_div('cmi5-activity-item ' . $statusClass);
             $customhtml .= html_writer::link(
                 $launchUrl,
-                html_writer::span('▶', 'activity-icon') .
-                html_writer::span($activity['title'], 'activity-title'),
+                html_writer::span($statusIcon, 'activity-status-icon') .
+                html_writer::span($activity['title'], 'activity-title') .
+                html_writer::span($statusText, 'activity-status-badge'),
                 array(
                     'class' => 'cmi5-activity-launch',
                     'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ', ' . $needsinit . ');',
                     'data-auid' => $activity['id'],
-                    'data-auindex' => $activity['index']
+                    'data-auindex' => $activity['index'],
+                    'title' => $statusText
                 )
             );
             $customhtml .= html_writer::end_div();
@@ -318,13 +345,24 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 };
 
                 window.launchCMI5Activity = function(cmid, auid, auindex, needsinit) {
-                    // If needs init, just go to view.php to initialize AUs
+                    // Open view.php in new window/tab
+                    // If needs init, just open view.php to initialize AUs
                     // Otherwise auto-launch the specific AU in modal player
                     var url = '/mod/cmi5launch/view.php?id=' + cmid;
                     if (!needsinit) {
                         url += '&launch=' + auid + '&auindex=' + auindex;
                     }
-                    window.location.href = url;
+
+                    // Open in new window (popup style)
+                    var width = Math.min(1400, window.screen.width * 0.9);
+                    var height = Math.min(900, window.screen.height * 0.9);
+                    var left = (window.screen.width - width) / 2;
+                    var top = (window.screen.height - height) / 2;
+
+                    window.open(url, 'CMI5Activity_' + cmid,
+                        'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top +
+                        ',toolbar=no,menubar=no,scrollbars=yes,resizable=yes,location=no');
+
                     return false;
                 };
             }
