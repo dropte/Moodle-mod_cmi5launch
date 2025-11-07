@@ -508,6 +508,219 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         }
                     }
                 };
+
+                window.minimizeCMI5Modal = function(cmid) {
+                    var content = document.getElementById('cmi5-course-modal-' + cmid).querySelector('.cmi5-course-modal-content');
+                    if (!content) return;
+
+                    if (content.style.height === '50px') {
+                        // Restore
+                        var state = window.cmi5ModalState && window.cmi5ModalState[cmid];
+                        if (state && state.lastSize) {
+                            content.style.width = state.lastSize.width;
+                            content.style.height = state.lastSize.height;
+                            content.style.top = state.lastSize.top;
+                            content.style.left = state.lastSize.left;
+                        }
+                    } else {
+                        // Minimize
+                        if (!window.cmi5ModalState) window.cmi5ModalState = {};
+                        if (!window.cmi5ModalState[cmid]) window.cmi5ModalState[cmid] = {};
+                        window.cmi5ModalState[cmid].lastSize = {
+                            width: content.style.width || '95%',
+                            height: content.style.height || '95%',
+                            top: content.style.top || '2%',
+                            left: content.style.left || '2.5%'
+                        };
+                        content.style.height = '50px';
+                        content.style.top = 'auto';
+                        content.style.bottom = '20px';
+                        content.style.left = '20px';
+                        content.style.width = '400px';
+                    }
+                };
+
+                window.toggleMaximizeCMI5Modal = function(cmid) {
+                    var content = document.getElementById('cmi5-course-modal-' + cmid).querySelector('.cmi5-course-modal-content');
+                    if (!content) return;
+
+                    if (!window.cmi5ModalState) window.cmi5ModalState = {};
+                    if (!window.cmi5ModalState[cmid]) window.cmi5ModalState[cmid] = { isMaximized: false };
+
+                    if (window.cmi5ModalState[cmid].isMaximized) {
+                        // Restore
+                        var lastPos = window.cmi5ModalState[cmid].lastPosition;
+                        if (lastPos) {
+                            content.style.width = lastPos.width;
+                            content.style.height = lastPos.height;
+                            content.style.top = lastPos.top;
+                            content.style.left = lastPos.left;
+                            content.style.margin = '2% auto';
+                        }
+                        window.cmi5ModalState[cmid].isMaximized = false;
+                    } else {
+                        // Maximize
+                        window.cmi5ModalState[cmid].lastPosition = {
+                            width: content.style.width || '95%',
+                            height: content.style.height || '95%',
+                            top: content.style.top || '2%',
+                            left: content.style.left || '2.5%'
+                        };
+                        content.style.width = '100%';
+                        content.style.height = '100%';
+                        content.style.top = '0';
+                        content.style.left = '0';
+                        content.style.margin = '0';
+                        window.cmi5ModalState[cmid].isMaximized = true;
+                    }
+                };
+
+                window.popOutCMI5Modal = function(cmid) {
+                    var modal = document.getElementById('cmi5-course-modal-' + cmid);
+                    var iframe = document.getElementById('cmi5-course-iframe-' + cmid);
+                    if (!iframe || !iframe.src) return;
+
+                    // Open current iframe URL in new window
+                    var width = Math.min(1400, window.screen.width * 0.9);
+                    var height = Math.min(900, window.screen.height * 0.9);
+                    var left = (window.screen.width - width) / 2;
+                    var top = (window.screen.height - height) / 2;
+
+                    window.open(iframe.src, 'CMI5Activity_' + cmid + '_' + Date.now(),
+                        'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top +
+                        ',toolbar=no,menubar=no,scrollbars=yes,resizable=yes');
+
+                    // Close the modal
+                    closeCMI5CourseModal(cmid);
+                };
+
+                // Make modal draggable
+                function makeCMI5ModalDraggable(cmid) {
+                    var content = document.getElementById('cmi5-course-modal-' + cmid).querySelector('.cmi5-course-modal-content');
+                    var header = document.getElementById('cmi5-modal-header-' + cmid);
+                    if (!content || !header) return;
+
+                    var isDragging = false;
+                    var offsetX, offsetY;
+
+                    header.style.cursor = 'grab';
+
+                    header.addEventListener('mousedown', function(e) {
+                        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.closest('.cmi5-modal-nav-controls')) {
+                            return;
+                        }
+
+                        isDragging = true;
+                        header.style.cursor = 'grabbing';
+
+                        var rect = content.getBoundingClientRect();
+                        offsetX = e.clientX - rect.left;
+                        offsetY = e.clientY - rect.top;
+
+                        e.preventDefault();
+                    });
+
+                    document.addEventListener('mousemove', function(e) {
+                        if (!isDragging) return;
+
+                        var newLeft = e.clientX - offsetX;
+                        var newTop = e.clientY - offsetY;
+
+                        content.style.left = newLeft + 'px';
+                        content.style.top = newTop + 'px';
+                        content.style.margin = '0';
+                    });
+
+                    document.addEventListener('mouseup', function() {
+                        if (isDragging) {
+                            isDragging = false;
+                            header.style.cursor = 'grab';
+                        }
+                    });
+                }
+
+                // Make modal resizable
+                function makeCMI5ModalResizable(cmid) {
+                    var content = document.getElementById('cmi5-course-modal-' + cmid).querySelector('.cmi5-course-modal-content');
+                    var handles = content.querySelectorAll('.cmi5-resize-handle');
+
+                    handles.forEach(function(handle) {
+                        var isResizing = false;
+                        var startX, startY, startWidth, startHeight, startLeft, startTop;
+
+                        handle.addEventListener('mousedown', function(e) {
+                            isResizing = true;
+                            startX = e.clientX;
+                            startY = e.clientY;
+
+                            var rect = content.getBoundingClientRect();
+                            startWidth = rect.width;
+                            startHeight = rect.height;
+                            startLeft = rect.left;
+                            startTop = rect.top;
+
+                            e.preventDefault();
+                            e.stopPropagation();
+                        });
+
+                        document.addEventListener('mousemove', function(e) {
+                            if (!isResizing) return;
+
+                            var deltaX = e.clientX - startX;
+                            var deltaY = e.clientY - startY;
+
+                            if (handle.classList.contains('cmi5-resize-handle-r')) {
+                                content.style.width = (startWidth + deltaX) + 'px';
+                            } else if (handle.classList.contains('cmi5-resize-handle-l')) {
+                                content.style.width = (startWidth - deltaX) + 'px';
+                                content.style.left = (startLeft + deltaX) + 'px';
+                            } else if (handle.classList.contains('cmi5-resize-handle-b')) {
+                                content.style.height = (startHeight + deltaY) + 'px';
+                            } else if (handle.classList.contains('cmi5-resize-handle-t')) {
+                                content.style.height = (startHeight - deltaY) + 'px';
+                                content.style.top = (startTop + deltaY) + 'px';
+                            } else if (handle.classList.contains('cmi5-resize-handle-br')) {
+                                content.style.width = (startWidth + deltaX) + 'px';
+                                content.style.height = (startHeight + deltaY) + 'px';
+                            } else if (handle.classList.contains('cmi5-resize-handle-bl')) {
+                                content.style.width = (startWidth - deltaX) + 'px';
+                                content.style.height = (startHeight + deltaY) + 'px';
+                                content.style.left = (startLeft + deltaX) + 'px';
+                            } else if (handle.classList.contains('cmi5-resize-handle-tr')) {
+                                content.style.width = (startWidth + deltaX) + 'px';
+                                content.style.height = (startHeight - deltaY) + 'px';
+                                content.style.top = (startTop + deltaY) + 'px';
+                            } else if (handle.classList.contains('cmi5-resize-handle-tl')) {
+                                content.style.width = (startWidth - deltaX) + 'px';
+                                content.style.height = (startHeight - deltaY) + 'px';
+                                content.style.left = (startLeft + deltaX) + 'px';
+                                content.style.top = (startTop + deltaY) + 'px';
+                            }
+
+                            content.style.margin = '0';
+                        });
+
+                        document.addEventListener('mouseup', function() {
+                            isResizing = false;
+                        });
+                    });
+                }
+
+                // Initialize dragging and resizing when modal is first opened
+                var originalLoadFunction = loadCMI5ModalActivity;
+                loadCMI5ModalActivity = function(cmid, auindex) {
+                    originalLoadFunction(cmid, auindex);
+
+                    // Initialize on first load
+                    setTimeout(function() {
+                        if (!window.cmi5ModalInitialized) window.cmi5ModalInitialized = {};
+                        if (!window.cmi5ModalInitialized[cmid]) {
+                            makeCMI5ModalDraggable(cmid);
+                            makeCMI5ModalResizable(cmid);
+                            window.cmi5ModalInitialized[cmid] = true;
+                        }
+                    }, 100);
+                };
             }
         ");
     }
@@ -521,6 +734,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
     // Modal header with navigation controls
     $customhtml .= html_writer::start_div('cmi5-course-modal-header', array('id' => 'cmi5-modal-header-' . $coursemodule->id));
+    $customhtml .= html_writer::start_div('cmi5-modal-header-left');
+    $customhtml .= html_writer::tag('span', '⋮⋮', array('class' => 'cmi5-modal-drag-icon', 'title' => 'Drag to move'));
     $customhtml .= html_writer::start_div('cmi5-modal-nav-controls');
     $customhtml .= html_writer::tag('button', '‹', array(
         'class' => 'cmi5-modal-nav-btn',
@@ -547,11 +762,30 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
         'id' => 'cmi5-modal-title-' . $coursemodule->id,
         'class' => 'cmi5-modal-title'
     ));
+    $customhtml .= html_writer::end_div(); // cmi5-modal-header-left
+    $customhtml .= html_writer::start_div('cmi5-modal-header-right');
+    $customhtml .= html_writer::tag('button', '−', array(
+        'class' => 'cmi5-modal-control-btn',
+        'onclick' => 'minimizeCMI5Modal(' . $coursemodule->id . ')',
+        'title' => 'Minimize'
+    ));
+    $customhtml .= html_writer::tag('button', '□', array(
+        'class' => 'cmi5-modal-control-btn',
+        'onclick' => 'toggleMaximizeCMI5Modal(' . $coursemodule->id . ')',
+        'title' => 'Maximize/Restore',
+        'id' => 'cmi5-modal-maximize-' . $coursemodule->id
+    ));
+    $customhtml .= html_writer::tag('button', '⧉', array(
+        'class' => 'cmi5-modal-control-btn',
+        'onclick' => 'popOutCMI5Modal(' . $coursemodule->id . ')',
+        'title' => 'Pop Out to New Window'
+    ));
     $customhtml .= html_writer::tag('button', '×', array(
         'class' => 'cmi5-course-modal-close',
         'onclick' => 'closeCMI5CourseModal(' . $coursemodule->id . ')',
         'title' => 'Close'
     ));
+    $customhtml .= html_writer::end_div(); // cmi5-modal-header-right
     $customhtml .= html_writer::end_div(); // cmi5-course-modal-header
 
     // Modal body with loading spinner and iframe
@@ -569,6 +803,16 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
         'onload' => 'hideCMI5Loading(' . $coursemodule->id . ')'
     ));
     $customhtml .= html_writer::end_div(); // cmi5-course-modal-body
+
+    // Add resize handles
+    $customhtml .= html_writer::div('', 'cmi5-resize-handle cmi5-resize-handle-br');
+    $customhtml .= html_writer::div('', 'cmi5-resize-handle cmi5-resize-handle-bl');
+    $customhtml .= html_writer::div('', 'cmi5-resize-handle cmi5-resize-handle-tr');
+    $customhtml .= html_writer::div('', 'cmi5-resize-handle cmi5-resize-handle-tl');
+    $customhtml .= html_writer::div('', 'cmi5-resize-handle cmi5-resize-handle-r');
+    $customhtml .= html_writer::div('', 'cmi5-resize-handle cmi5-resize-handle-l');
+    $customhtml .= html_writer::div('', 'cmi5-resize-handle cmi5-resize-handle-t');
+    $customhtml .= html_writer::div('', 'cmi5-resize-handle cmi5-resize-handle-b');
 
     $customhtml .= html_writer::end_div(); // cmi5-course-modal-content
     $customhtml .= html_writer::end_div(); // cmi5-course-modal
