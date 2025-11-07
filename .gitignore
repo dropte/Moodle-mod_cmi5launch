@@ -1,1 +1,4 @@
 .vscode/
+
+# Build artifacts
+*.zip
