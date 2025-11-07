@@ -819,8 +819,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
     $info->content = $customhtml;
 
-    // Use theme-appropriate icon (monologo.svg uses currentColor to adapt to theme)
-    $info->icon = 'monologo';
+    // Moodle will automatically use pix/icon.svg which adapts to theme colors
 
     return $info;
 }
