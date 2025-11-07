@@ -139,25 +139,42 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
         var availableAUs = [
             <?php
             $auListJS = array();
-            foreach ($auids as $index => $auid) {
-                $au = $getaus($auid);
-                $auListJS[] = '{id: "' . addslashes($auid) . '", title: "' . addslashes($au->title) . '", index: ' . $index . '}';
+            if (isset($auids) && is_array($auids)) {
+                foreach ($auids as $index => $auid) {
+                    try {
+                        $au = $getaus($auid);
+                        if ($au && isset($au->title)) {
+                            // Create actual JavaScript objects, not strings
+                            $auListJS[] = '{id: "' . addslashes($auid) . '", title: "' . str_replace('"', '\\"', $au->title) . '", index: ' . $index . '}';
+                        }
+                    } catch (Exception $e) {
+                        // Skip AUs that can't be loaded
+                        continue;
+                    }
+                }
             }
-            echo implode(",\n            ", $auListJS);
+            echo count($auListJS) > 0 ? implode(",\n            ", $auListJS) : '';
             ?>
         ];
 
         // Function to run when the experience is launched (on click).
         function mod_cmi5launch_launchexperience(auid, windowId) {
+            // Check if we have any AUs available
+            if (!availableAUs || availableAUs.length === 0) {
+                showNotification('No activities available', 'error');
+                return;
+            }
+
             // Show launching notification
             showNotification('<?php echo get_string('launching', 'cmi5launch'); ?>', 'info');
 
             // Find the AU index
             const auIndex = availableAUs.findIndex(au => au.id === auid);
+            const finalIndex = auIndex >= 0 ? auIndex : 0;
 
             // Launch directly in modal player
             const url = `launch.php?launchform_registration=${encodeURIComponent(auid)}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
-            openPlayerModal(url, auIndex, windowId);
+            openPlayerModal(url, finalIndex, windowId);
 
             // Show success notification and start checking for updates
             setTimeout(function() {
@@ -255,6 +272,9 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
         }
 
         function navigateAU(windowId, direction) {
+            if (!window.playerWindows || !window.playerWindows[windowId]) return;
+            if (!availableAUs || availableAUs.length === 0) return;
+
             const state = window.playerWindows[windowId];
             const newIndex = state.currentAUIndex + direction;
 
@@ -264,7 +284,7 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
 
                 // Update iframe
                 const iframe = document.getElementById('cmi5-player-iframe-' + windowId);
-                iframe.src = url;
+                if (iframe) iframe.src = url;
 
                 // Update state
                 state.currentAUIndex = newIndex;
@@ -281,25 +301,41 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
         }
 
         function updateNavigationControls(windowId) {
+            if (!window.playerWindows || !window.playerWindows[windowId]) return;
+            if (!availableAUs || availableAUs.length === 0) return;
+
             const state = window.playerWindows[windowId];
             const currentAU = availableAUs[state.currentAUIndex];
 
+            if (!currentAU) return;
+
             // Update counter and title
-            document.getElementById('activity-counter-' + windowId).textContent = `${state.currentAUIndex + 1} of ${availableAUs.length}`;
-            document.getElementById('activity-title-' + windowId).textContent = currentAU.title;
+            const counterEl = document.getElementById('activity-counter-' + windowId);
+            const titleEl = document.getElementById('activity-title-' + windowId);
+
+            if (counterEl) counterEl.textContent = `${state.currentAUIndex + 1} of ${availableAUs.length}`;
+            if (titleEl) titleEl.textContent = currentAU.title;
 
             // Enable/disable navigation buttons
             const prevBtn = document.getElementById('nav-prev-' + windowId);
             const nextBtn = document.getElementById('nav-next-' + windowId);
 
-            prevBtn.disabled = state.currentAUIndex === 0;
-            nextBtn.disabled = state.currentAUIndex === availableAUs.length - 1;
+            if (prevBtn) {
+                prevBtn.disabled = state.currentAUIndex === 0;
+                prevBtn.style.opacity = state.currentAUIndex === 0 ? '0.3' : '1';
+            }
 
-            prevBtn.style.opacity = state.currentAUIndex === 0 ? '0.3' : '1';
-            nextBtn.style.opacity = state.currentAUIndex === availableAUs.length - 1 ? '0.3' : '1';
+            if (nextBtn) {
+                nextBtn.disabled = state.currentAUIndex === availableAUs.length - 1;
+                nextBtn.style.opacity = state.currentAUIndex === availableAUs.length - 1 ? '0.3' : '1';
+            }
         }
 
         function openNewWindow() {
+            if (!availableAUs || availableAUs.length === 0) {
+                showNotification('No activities available', 'error');
+                return;
+            }
             const newWindowId = 'window-' + Date.now();
             // Launch the first AU in the new window
             mod_cmi5launch_launchexperience(availableAUs[0].id, newWindowId);
