@@ -161,7 +161,19 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
     }
 
     // Debug comment
-    $customhtml .= '<!-- CMI5 Debug: activities=' . count($activities) . ', has_aus=' . (!empty($cmi5launch->aus) ? 'yes' : 'no') . ' -->';
+    $debuginfo = 'activities=' . count($activities);
+    $debuginfo .= ', userhasstarted=' . ($userhasstarted ? 'yes' : 'no');
+    if (isset($userscourse)) {
+        $debuginfo .= ', usercourse=found';
+        $debuginfo .= ', usercourse_aus=' . (!empty($userscourse->aus) ? 'yes' : 'no');
+        if (!empty($userscourse->aus)) {
+            $auids_count = is_array(json_decode($userscourse->aus)) ? count(json_decode($userscourse->aus)) : 0;
+            $debuginfo .= ', auids_count=' . $auids_count;
+        }
+    } else {
+        $debuginfo .= ', usercourse=notfound';
+    }
+    $customhtml .= '<!-- CMI5 Debug: ' . $debuginfo . ' -->';
 
     // Add accordion toggle button
     $customhtml .= html_writer::start_div('cmi5launch-card-actions');
