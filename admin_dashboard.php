@@ -30,7 +30,6 @@
 
 require_once(dirname(dirname(dirname(__FILE__))).'/config.php');
 require_once(dirname(__FILE__).'/lib.php');
-require_once($CFG->libdir.'/tablelib.php');
 
 use mod_cmi5launch\local\progress;
 use mod_cmi5launch\local\cmi5_connectors;
