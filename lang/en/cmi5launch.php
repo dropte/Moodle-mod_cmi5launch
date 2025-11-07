@@ -411,6 +411,7 @@ $string['admindashboard:resetuserprogress'] = 'Reset user progress';
 $string['resetuserprogress'] = 'Reset Progress';
 $string['confirmreset'] = 'Are you sure you want to reset this user\'s progress?';
 $string['usercoursenotfound'] = 'User course registration not found. Please refresh the page to reinitialize.';
+$string['reinitializing'] = 'Reinitializing your course registration...';
 $string['resetsuccessful'] = 'User progress has been reset successfully';
 $string['userprogressoverview'] = 'User Progress Overview';
 $string['lrsanalytics'] = 'LRS Analytics';
