@@ -53,6 +53,7 @@ $PAGE->set_title(format_string($cmi5launch->name) . ' - Admin Dashboard');
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 $PAGE->requires->css('/mod/cmi5launch/styles.css');
+$PAGE->requires->js(new moodle_url('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'));
 
 // Handle actions
 if ($action === 'reset' && $userid > 0) {
@@ -398,70 +399,296 @@ if ($currenttab === 'overview') {
     echo html_writer::end_div(); // analytics
 
 } else if ($currenttab === 'insights') {
-    // AI Insights
+    // AI Insights with visualizations
     echo html_writer::start_div('cmi5-admin-insights');
     echo $OUTPUT->heading('AI-Powered Insights', 3);
-
-    echo html_writer::tag('p', 'This feature provides AI-generated insights based on user progress and LRS data.');
-
-    // AI Provider Configuration
-    echo $OUTPUT->heading('Configuration', 4);
-    echo html_writer::start_div('alert alert-info');
-    echo html_writer::tag('p', 'To enable AI insights, configure an AI provider in the plugin settings.');
-    echo html_writer::tag('p', 'Supported providers: OpenAI, Anthropic Claude, Local LLM');
-    echo html_writer::end_div();
 
     // Check if AI is configured
     $aiprovider = get_config('cmi5launch', 'ai_provider');
     $apikey = get_config('cmi5launch', 'ai_api_key');
-
-    // Local LLM doesn't require API key
     $isconfigured = !empty($aiprovider) && ($aiprovider === 'local' || !empty($apikey));
 
-    if ($isconfigured) {
-        echo $OUTPUT->heading('AI-Generated Insights', 4);
-        echo html_writer::tag('p', 'Automatically generated insights based on current activity data.');
-
-        // Define all insight types
-        $insighttypes = array(
-            'progress' => 'Overall Progress Analysis',
-            'engagement' => 'User Engagement Patterns',
-            'recommendations' => 'Learning Recommendations',
-            'at_risk' => 'At-Risk Users'
-        );
-
-        // Auto-generate all insights
-        foreach ($insighttypes as $type => $title) {
-            echo html_writer::start_div('insight-section mb-4');
-            echo $OUTPUT->heading($title, 5);
-
-            try {
-                // Generate insights using AI
-                $insights = \mod_cmi5launch\local\ai_insights::generate_insights(
-                    $type,
-                    $cmi5launch,
-                    $enrolledusers,
-                    $DB
-                );
-
-                echo html_writer::start_div('alert alert-info');
-                echo html_writer::div(nl2br(htmlspecialchars($insights)), 'ai-insights-content');
-                echo html_writer::end_div();
-
-            } catch (\Exception $e) {
-                echo html_writer::start_div('alert alert-danger');
-                echo html_writer::tag('strong', 'Error: ');
-                echo html_writer::tag('span', $e->getMessage());
-                echo html_writer::end_div();
-            }
-
-            echo html_writer::end_div(); // insight-section
-        }
-    } else {
-        echo html_writer::start_div('alert alert-warning');
-        echo html_writer::tag('p', 'AI insights are not yet configured. Please contact your administrator to set up an AI provider.');
+    if (!$isconfigured) {
+        echo html_writer::start_div('alert alert-info');
+        echo html_writer::tag('p', '💡 Configure an AI provider in plugin settings for intelligent recommendations.');
+        echo html_writer::tag('p', 'Supported: OpenAI, Anthropic Claude, Local LLM');
         echo html_writer::end_div();
     }
+
+    // Calculate metrics for visualizations
+    $totalausers = count($enrolledusers);
+    $usersstarted = $DB->count_records('cmi5launch_usercourse', array('moodlecourseid' => $cm->instance));
+    $usercourses = $DB->get_records('cmi5launch_usercourse', array('moodlecourseid' => $cm->instance));
+
+    $completedcount = 0;
+    $inprogresscount = 0;
+    $atriskcount = 0;
+    $weekago = time() - (7 * 24 * 60 * 60);
+
+    foreach ($usercourses as $usercourse) {
+        if (!empty($usercourse->aus)) {
+            $aus = json_decode($usercourse->aus);
+            $allcompleted = true;
+            $anyprogress = false;
+
+            foreach ($aus as $auid) {
+                $au = $DB->get_record('cmi5launch_aus', array('id' => $auid));
+                if ($au) {
+                    if ($au->satisfied === 'Satisfied') {
+                        $anyprogress = true;
+                    } else {
+                        $allcompleted = false;
+                        if (!empty($au->scores)) {
+                            $anyprogress = true;
+                        }
+                    }
+                }
+            }
+
+            if ($allcompleted) {
+                $completedcount++;
+            } else if ($anyprogress) {
+                $inprogresscount++;
+                // Check if stalled
+                if ($usercourse->timemodified < $weekago) {
+                    $atriskcount++;
+                }
+            }
+        }
+    }
+
+    $notstartedcount = $totalausers - $usersstarted;
+    $completionrate = $totalausers > 0 ? round(($completedcount / $totalausers) * 100) : 0;
+
+    // Row 1: Key Metrics with Charts
+    echo html_writer::start_div('row mb-4');
+
+    // Progress Overview Chart
+    echo html_writer::start_div('col-md-6');
+    echo html_writer::start_div('card');
+    echo html_writer::start_div('card-body');
+    echo html_writer::tag('h5', '📊 Progress Distribution', array('class' => 'card-title'));
+    echo html_writer::tag('canvas', '', array('id' => 'progressChart', 'style' => 'height: 250px;'));
+    echo html_writer::end_div();
+    echo html_writer::end_div();
+    echo html_writer::end_div();
+
+    // Completion Rate Gauge
+    echo html_writer::start_div('col-md-6');
+    echo html_writer::start_div('card');
+    echo html_writer::start_div('card-body');
+    echo html_writer::tag('h5', '🎯 Completion Rate', array('class' => 'card-title'));
+    echo html_writer::tag('canvas', '', array('id' => 'completionGauge', 'style' => 'height: 250px;'));
+    echo html_writer::end_div();
+    echo html_writer::end_div();
+    echo html_writer::end_div();
+
+    echo html_writer::end_div(); // row
+
+    // Row 2: AI Insights Cards
+    if ($isconfigured) {
+        echo html_writer::start_div('row mb-4');
+
+        // Generate concise AI insights
+        try {
+            $progressinsight = \mod_cmi5launch\local\ai_insights::generate_insights('progress', $cmi5launch, $enrolledusers, $DB);
+            $atriskinsight = \mod_cmi5launch\local\ai_insights::generate_insights('at_risk', $cmi5launch, $enrolledusers, $DB);
+
+            // Progress Insight Card
+            echo html_writer::start_div('col-md-6');
+            echo html_writer::start_div('card border-primary');
+            echo html_writer::start_div('card-body');
+            echo html_writer::tag('h5', '💡 Key Insight', array('class' => 'card-title'));
+            $shortinsight = substr($progressinsight, 0, 300) . '...';
+            echo html_writer::tag('p', $shortinsight, array('class' => 'card-text'));
+            echo html_writer::end_div();
+            echo html_writer::end_div();
+            echo html_writer::end_div();
+
+            // At-Risk Alert Card
+            echo html_writer::start_div('col-md-6');
+            $cardclass = $atriskcount > 0 ? 'border-danger' : 'border-success';
+            echo html_writer::start_div('card ' . $cardclass);
+            echo html_writer::start_div('card-body');
+            echo html_writer::tag('h5', '⚠️ Attention Needed', array('class' => 'card-title'));
+            $shortrisk = substr($atriskinsight, 0, 300) . '...';
+            echo html_writer::tag('p', $shortrisk, array('class' => 'card-text'));
+            echo html_writer::end_div();
+            echo html_writer::end_div();
+            echo html_writer::end_div();
+
+        } catch (\Exception $e) {
+            echo html_writer::start_div('col-12');
+            echo html_writer::start_div('alert alert-warning');
+            echo 'AI insights temporarily unavailable: ' . $e->getMessage();
+            echo html_writer::end_div();
+            echo html_writer::end_div();
+        }
+
+        echo html_writer::end_div(); // row
+    }
+
+    // Row 3: Activity Performance Chart
+    if (!empty($cmi5launch->aus)) {
+        $aus = json_decode($cmi5launch->aus);
+        if ($aus && is_array($aus) && count($aus) > 0) {
+            echo html_writer::start_div('row mb-4');
+            echo html_writer::start_div('col-12');
+            echo html_writer::start_div('card');
+            echo html_writer::start_div('card-body');
+            echo html_writer::tag('h5', '📈 Activity Performance', array('class' => 'card-title'));
+            echo html_writer::tag('canvas', '', array('id' => 'activityChart', 'style' => 'height: 300px;'));
+            echo html_writer::end_div();
+            echo html_writer::end_div();
+            echo html_writer::end_div();
+            echo html_writer::end_div();
+
+            // Prepare activity data for chart
+            $activitylabels = array();
+            $activitystarted = array();
+            $activitycompleted = array();
+
+            foreach ($aus as $index => $audata) {
+                $au = is_array($audata) && count($audata) > 0 ? $audata[0] : $audata;
+                $title = 'Activity ' . ($index + 1);
+                if (is_object($au) && isset($au->title)) {
+                    if (is_array($au->title) && count($au->title) > 0) {
+                        $titleobj = $au->title[0];
+                        if (is_object($titleobj) && isset($titleobj->text)) {
+                            $title = strlen($titleobj->text) > 20 ? substr($titleobj->text, 0, 20) . '...' : $titleobj->text;
+                        }
+                    }
+                }
+                $activitylabels[] = $title;
+
+                $started = 0;
+                $completed = 0;
+                foreach ($usercourses as $usercourse) {
+                    $useraus = json_decode($usercourse->aus);
+                    if ($useraus && is_array($useraus)) {
+                        foreach ($useraus as $auid) {
+                            $userau = $DB->get_record('cmi5launch_aus', array('id' => $auid));
+                            if ($userau && $userau->auindex == $index) {
+                                $started++;
+                                if ($userau->satisfied === 'Satisfied') {
+                                    $completed++;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                $activitystarted[] = $started;
+                $activitycompleted[] = $completed;
+            }
+        }
+    }
+
+    // JavaScript for charts
+    echo html_writer::start_tag('script');
+    ?>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Progress Distribution Pie Chart
+        const progressCtx = document.getElementById('progressChart');
+        if (progressCtx) {
+            new Chart(progressCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'In Progress', 'Not Started'],
+                    datasets: [{
+                        data: [<?php echo $completedcount; ?>, <?php echo $inprogresscount; ?>, <?php echo $notstartedcount; ?>],
+                        backgroundColor: ['#28a745', '#ffc107', '#6c757d'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Completion Rate Gauge
+        const gaugeCtx = document.getElementById('completionGauge');
+        if (gaugeCtx) {
+            new Chart(gaugeCtx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [<?php echo $completionrate; ?>, <?php echo 100 - $completionrate; ?>],
+                        backgroundColor: [
+                            <?php echo $completionrate >= 70 ? "'#28a745'" : ($completionrate >= 40 ? "'#ffc107'" : "'#dc3545'"); ?>,
+                            '#e9ecef'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                },
+                plugins: [{
+                    beforeDraw: function(chart) {
+                        const width = chart.width;
+                        const height = chart.height;
+                        const ctx = chart.ctx;
+                        ctx.restore();
+                        const fontSize = (height / 114).toFixed(2);
+                        ctx.font = fontSize + "em sans-serif";
+                        ctx.textBaseline = "middle";
+                        const text = "<?php echo $completionrate; ?>%";
+                        const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                        const textY = height / 2;
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                    }
+                }]
+            });
+        }
+
+        // Activity Performance Bar Chart
+        const activityCtx = document.getElementById('activityChart');
+        if (activityCtx) {
+            new Chart(activityCtx, {
+                type: 'bar',
+                data: {
+                    labels: <?php echo json_encode($activitylabels ?? []); ?>,
+                    datasets: [
+                        {
+                            label: 'Started',
+                            data: <?php echo json_encode($activitystarted ?? []); ?>,
+                            backgroundColor: '#007bff'
+                        },
+                        {
+                            label: 'Completed',
+                            data: <?php echo json_encode($activitycompleted ?? []); ?>,
+                            backgroundColor: '#28a745'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        }
+    });
+    <?php
+    echo html_writer::end_tag('script');
 
     echo html_writer::end_div(); // insights
 }
