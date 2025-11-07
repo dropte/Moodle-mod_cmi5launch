@@ -282,35 +282,43 @@ $auterm = cmi5launch_get_term('au', false);
             const windowEl = document.getElementById('cmi5-window');
             const header = document.getElementById('cmi5-window-header');
             let isDragging = false;
-            let currentX, currentY, initialX, initialY;
+            let offsetX, offsetY;
 
             header.addEventListener('mousedown', dragStart);
 
             function dragStart(e) {
-                // Don't drag if clicking on buttons
-                if (e.target.tagName === 'BUTTON') return;
+                // Don't drag if clicking on buttons or other interactive elements
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SPAN') return;
 
                 isDragging = true;
-                initialX = e.clientX - (parseFloat(windowEl.style.left) || 0);
-                initialY = e.clientY - (parseFloat(windowEl.style.top) || 0);
+
+                // Get current position using getBoundingClientRect for accurate pixel values
+                const rect = windowEl.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
 
                 document.addEventListener('mousemove', drag);
                 document.addEventListener('mouseup', dragEnd);
                 header.style.cursor = 'grabbing';
+                e.preventDefault(); // Prevent text selection while dragging
             }
 
             function drag(e) {
                 if (!isDragging) return;
 
                 e.preventDefault();
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
 
-                windowEl.style.left = currentX + 'px';
-                windowEl.style.top = currentY + 'px';
+                // Calculate new position
+                const newX = e.clientX - offsetX;
+                const newY = e.clientY - offsetY;
+
+                windowEl.style.left = newX + 'px';
+                windowEl.style.top = newY + 'px';
             }
 
-            function dragEnd() {
+            function dragEnd(e) {
+                if (!isDragging) return;
+
                 isDragging = false;
                 document.removeEventListener('mousemove', drag);
                 document.removeEventListener('mouseup', dragEnd);
