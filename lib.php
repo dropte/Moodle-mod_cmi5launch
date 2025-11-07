@@ -378,16 +378,25 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     console.log('Opening popup with URL:', url);
 
                     // Open in new window (popup style)
+                    // Use unique window name for each AU so multiple can be open
                     var width = Math.min(1400, window.screen.width * 0.9);
                     var height = Math.min(900, window.screen.height * 0.9);
                     var left = (window.screen.width - width) / 2;
                     var top = (window.screen.height - height) / 2;
 
-                    var popup = window.open(url, 'CMI5Activity_' + cmid,
+                    var windowName = 'CMI5Activity_' + cmid + '_' + auid;
+                    var popup = window.open(url, windowName,
                         'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top +
                         ',toolbar=no,menubar=no,scrollbars=yes,resizable=yes,location=no');
 
-                    console.log('Popup window opened:', popup);
+                    // Focus the popup window to bring it forward
+                    if (popup) {
+                        popup.focus();
+                        console.log('Popup window opened and focused:', popup);
+                    } else {
+                        console.error('Popup blocked! Please allow popups for this site.');
+                        alert('Popup was blocked. Please allow popups for this site and try again.');
+                    }
 
                     return false;
                 };
