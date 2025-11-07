@@ -367,7 +367,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         event.stopPropagation();
                     }
 
-                    // Open view.php in new window/tab
+                    // Navigate to view.php in same tab
                     // If needs init, just open view.php to initialize AUs
                     // Otherwise auto-launch the specific AU in modal player
                     var url = '/mod/cmi5launch/view.php?id=' + cmid;
@@ -375,28 +375,10 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         url += '&launch=' + auid + '&auindex=' + auindex;
                     }
 
-                    console.log('Opening popup with URL:', url);
+                    console.log('Navigating to:', url);
 
-                    // Open in new window (popup style)
-                    // Use unique window name for each AU so multiple can be open
-                    var width = Math.min(1400, window.screen.width * 0.9);
-                    var height = Math.min(900, window.screen.height * 0.9);
-                    var left = (window.screen.width - width) / 2;
-                    var top = (window.screen.height - height) / 2;
-
-                    var windowName = 'CMI5Activity_' + cmid + '_' + auid;
-                    var popup = window.open(url, windowName,
-                        'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top +
-                        ',toolbar=no,menubar=no,scrollbars=yes,resizable=yes,location=no');
-
-                    // Focus the popup window to bring it forward
-                    if (popup) {
-                        popup.focus();
-                        console.log('Popup window opened and focused:', popup);
-                    } else {
-                        console.error('Popup blocked! Please allow popups for this site.');
-                        alert('Popup was blocked. Please allow popups for this site and try again.');
-                    }
+                    // Navigate in current tab
+                    window.location.href = url;
 
                     return false;
                 };
