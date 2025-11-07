@@ -367,20 +367,36 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         event.stopPropagation();
                     }
 
-                    // Navigate to view.php in same tab
-                    // If needs init, just open view.php to initialize AUs
-                    // Otherwise auto-launch the specific AU in modal player
+                    // Build URL for iframe
                     var url = '/mod/cmi5launch/view.php?id=' + cmid;
                     if (!needsinit) {
                         url += '&launch=' + auid + '&auindex=' + auindex;
                     }
 
-                    console.log('Navigating to:', url);
+                    console.log('Loading in modal:', url);
 
-                    // Navigate in current tab
-                    window.location.href = url;
+                    // Show modal and load iframe
+                    var modal = document.getElementById('cmi5-course-modal-' + cmid);
+                    var iframe = document.getElementById('cmi5-course-iframe-' + cmid);
+
+                    if (modal && iframe) {
+                        iframe.src = url;
+                        modal.style.display = 'block';
+                        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                    }
 
                     return false;
+                };
+
+                window.closeCMI5CourseModal = function(cmid) {
+                    var modal = document.getElementById('cmi5-course-modal-' + cmid);
+                    var iframe = document.getElementById('cmi5-course-iframe-' + cmid);
+
+                    if (modal && iframe) {
+                        modal.style.display = 'none';
+                        iframe.src = ''; // Clear iframe to stop activity
+                        document.body.style.overflow = ''; // Restore scrolling
+                    }
                 };
             }
         ");
@@ -388,6 +404,23 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
     $customhtml .= html_writer::end_div(); // cmi5launch-card-content
     $customhtml .= html_writer::end_div(); // cmi5launch-course-card
+
+    // Add modal container for course page player (hidden by default)
+    $customhtml .= html_writer::start_div('cmi5-course-modal', array('id' => 'cmi5-course-modal-' . $coursemodule->id, 'style' => 'display: none;'));
+    $customhtml .= html_writer::start_div('cmi5-course-modal-content');
+    $customhtml .= html_writer::tag('button', '×', array(
+        'class' => 'cmi5-course-modal-close',
+        'onclick' => 'closeCMI5CourseModal(' . $coursemodule->id . ')',
+        'title' => 'Close'
+    ));
+    $customhtml .= html_writer::tag('iframe', '', array(
+        'id' => 'cmi5-course-iframe-' . $coursemodule->id,
+        'src' => '',
+        'frameborder' => '0',
+        'allowfullscreen' => 'true'
+    ));
+    $customhtml .= html_writer::end_div(); // cmi5-course-modal-content
+    $customhtml .= html_writer::end_div(); // cmi5-course-modal
 
     $info->content = $customhtml;
     $info->customdata = (object)['customicon' => true];
