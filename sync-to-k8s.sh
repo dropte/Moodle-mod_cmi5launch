@@ -21,6 +21,7 @@ echo "📁 Copying PHP files..."
 kubectl cp view.php $POD_NAME:$PLUGIN_PATH/view.php
 kubectl cp AUview.php $POD_NAME:$PLUGIN_PATH/AUview.php
 kubectl cp settings.php $POD_NAME:$PLUGIN_PATH/settings.php
+kubectl cp lib.php $POD_NAME:$PLUGIN_PATH/lib.php
 kubectl cp locallib.php $POD_NAME:$PLUGIN_PATH/locallib.php
 kubectl cp styles.css $POD_NAME:$PLUGIN_PATH/styles.css
 
