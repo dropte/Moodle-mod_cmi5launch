@@ -188,7 +188,9 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
                                 <span class="window-drag-icon">⋮⋮</span>
                                 <div class="activity-nav-controls">
                                     <button class="nav-btn" onclick="navigateAU('${windowId}', -1)" title="Previous Activity" id="nav-prev-${windowId}">‹</button>
-                                    <span class="activity-counter" id="activity-counter-${windowId}">1 of 1</span>
+                                    <select class="activity-dropdown" id="activity-dropdown-${windowId}" onchange="jumpToAU('${windowId}', this.value)" title="Select Activity">
+                                        <option value="">Select Activity...</option>
+                                    </select>
                                     <button class="nav-btn" onclick="navigateAU('${windowId}', 1)" title="Next Activity" id="nav-next-${windowId}">›</button>
                                 </div>
                                 <h3 id="activity-title-${windowId}">Activity Player</h3>
@@ -312,6 +314,47 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             }
         }
 
+        function jumpToAU(windowId, targetIndex) {
+            if (!targetIndex || targetIndex === '') return;
+
+            targetIndex = parseInt(targetIndex);
+            if (isNaN(targetIndex)) return;
+
+            if (!window.playerWindows || !window.playerWindows[windowId]) return;
+            if (!availableAUs || availableAUs.length === 0) return;
+
+            if (targetIndex >= 0 && targetIndex < availableAUs.length) {
+                const au = availableAUs[targetIndex];
+                const url = `launch.php?launchform_registration=${encodeURIComponent(au.id)}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
+
+                // Show loading spinner
+                const loadingOverlay = document.getElementById('loading-overlay-' + windowId);
+                if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
+                // Update iframe
+                const iframe = document.getElementById('cmi5-player-iframe-' + windowId);
+                if (iframe) {
+                    // Hide spinner when loaded
+                    iframe.onload = function() {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    };
+                    iframe.src = url;
+                }
+
+                // Update state
+                window.playerWindows[windowId].currentAUIndex = targetIndex;
+
+                // Update controls
+                updateNavigationControls(windowId);
+
+                // Show notification
+                showNotification(`Loading ${au.title}`, 'info');
+
+                // Refresh progress
+                setTimeout(() => checkProgress(), 1000);
+            }
+        }
+
         function updateNavigationControls(windowId) {
             if (!window.playerWindows || !window.playerWindows[windowId]) return;
             if (!availableAUs || availableAUs.length === 0) return;
@@ -321,12 +364,25 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
 
             if (!currentAU) return;
 
-            // Update counter and title
-            const counterEl = document.getElementById('activity-counter-' + windowId);
+            // Update title
             const titleEl = document.getElementById('activity-title-' + windowId);
-
-            if (counterEl) counterEl.textContent = `${state.currentAUIndex + 1} of ${availableAUs.length}`;
             if (titleEl) titleEl.textContent = currentAU.title;
+
+            // Populate and update dropdown
+            const dropdown = document.getElementById('activity-dropdown-' + windowId);
+            if (dropdown) {
+                // Only populate if empty (first time)
+                if (dropdown.options.length <= 1) {
+                    availableAUs.forEach((au, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = `${index + 1}. ${au.title}`;
+                        dropdown.appendChild(option);
+                    });
+                }
+                // Set current selection
+                dropdown.value = state.currentAUIndex;
+            }
 
             // Enable/disable navigation buttons
             const prevBtn = document.getElementById('nav-prev-' + windowId);

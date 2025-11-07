@@ -487,6 +487,38 @@
     text-align: center;
 }
 
+.activity-dropdown {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    min-width: 200px;
+    max-width: 300px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.activity-dropdown:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.activity-dropdown:focus {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.activity-dropdown option {
+    background: #2c3e50;
+    color: white;
+    padding: 8px;
+}
+
 .window-controls-right {
     display: flex;
     gap: 8px;
