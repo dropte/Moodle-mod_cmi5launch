@@ -169,8 +169,9 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             console.log('Found AU at index:', auIndex);
             const finalIndex = auIndex >= 0 ? auIndex : 0;
 
-            // Launch directly in modal player
-            const url = `launch.php?launchform_registration=${encodeURIComponent(auid)}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
+            // Launch directly in modal player using auindex
+            const url = `launch.php?auindex=${finalIndex}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
+            console.log('Launching with URL:', url);
             openPlayerModal(url, finalIndex, windowId);
 
             // Show success notification and start checking for updates
@@ -293,7 +294,7 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
 
             if (newIndex >= 0 && newIndex < availableAUs.length) {
                 const au = availableAUs[newIndex];
-                const url = `launch.php?launchform_registration=${encodeURIComponent(au.id)}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
+                const url = `launch.php?auindex=${newIndex}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
 
                 // Show loading spinner
                 const loadingOverlay = document.getElementById('loading-overlay-' + windowId);
@@ -334,7 +335,7 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
 
             if (targetIndex >= 0 && targetIndex < availableAUs.length) {
                 const au = availableAUs[targetIndex];
-                const url = `launch.php?launchform_registration=${encodeURIComponent(au.id)}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
+                const url = `launch.php?auindex=${targetIndex}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
 
                 // Show loading spinner
                 const loadingOverlay = document.getElementById('loading-overlay-' + windowId);
