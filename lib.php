@@ -190,29 +190,33 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 foreach ($ausdata as $index => $audata) {
                     error_log('CMI5: AU[' . $index . '] structure: ' . json_encode($audata));
 
+                    // Unwrap array if needed - each AU might be wrapped in an array
+                    $au = is_array($audata) && count($audata) > 0 ? $audata[0] : $audata;
+                    error_log('CMI5: After unwrap, AU type: ' . gettype($au));
+
                     $title = '';
 
                     // Try to extract title from various possible structures
-                    if (is_object($audata)) {
-                        if (isset($audata->title)) {
+                    if (is_object($au)) {
+                        if (isset($au->title)) {
                             // Title structure: title: [{ text: "Activity Name" }]
-                            if (is_array($audata->title) && count($audata->title) > 0) {
-                                $titleobj = $audata->title[0];
+                            if (is_array($au->title) && count($au->title) > 0) {
+                                $titleobj = $au->title[0];
                                 if (is_object($titleobj) && isset($titleobj->text)) {
                                     $title = $titleobj->text;
-                                } else if (is_string($audata->title[0])) {
-                                    $title = $audata->title[0];
+                                } else if (is_string($au->title[0])) {
+                                    $title = $au->title[0];
                                 }
-                            } else if (is_string($audata->title)) {
-                                $title = $audata->title;
+                            } else if (is_string($au->title)) {
+                                $title = $au->title;
                             }
                         }
                         // Also check other possible name fields
-                        if (empty($title) && isset($audata->activityName)) {
-                            $title = $audata->activityName;
+                        if (empty($title) && isset($au->activityName)) {
+                            $title = $au->activityName;
                         }
-                        if (empty($title) && isset($audata->name)) {
-                            $title = $audata->name;
+                        if (empty($title) && isset($au->name)) {
+                            $title = $au->name;
                         }
                     }
 
@@ -247,29 +251,33 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 foreach ($ausdata as $index => $audata) {
                     error_log('CMI5: AU[' . $index . '] structure: ' . json_encode($audata));
 
+                    // Unwrap array if needed - each AU might be wrapped in an array
+                    $au = is_array($audata) && count($audata) > 0 ? $audata[0] : $audata;
+                    error_log('CMI5: After unwrap, AU type: ' . gettype($au));
+
                     $title = '';
 
                     // Try to extract title from various possible structures
-                    if (is_object($audata)) {
-                        if (isset($audata->title)) {
+                    if (is_object($au)) {
+                        if (isset($au->title)) {
                             // Title structure: title: [{ text: "Activity Name" }]
-                            if (is_array($audata->title) && count($audata->title) > 0) {
-                                $titleobj = $audata->title[0];
+                            if (is_array($au->title) && count($au->title) > 0) {
+                                $titleobj = $au->title[0];
                                 if (is_object($titleobj) && isset($titleobj->text)) {
                                     $title = $titleobj->text;
-                                } else if (is_string($audata->title[0])) {
-                                    $title = $audata->title[0];
+                                } else if (is_string($au->title[0])) {
+                                    $title = $au->title[0];
                                 }
-                            } else if (is_string($audata->title)) {
-                                $title = $audata->title;
+                            } else if (is_string($au->title)) {
+                                $title = $au->title;
                             }
                         }
                         // Also check other possible name fields
-                        if (empty($title) && isset($audata->activityName)) {
-                            $title = $audata->activityName;
+                        if (empty($title) && isset($au->activityName)) {
+                            $title = $au->activityName;
                         }
-                        if (empty($title) && isset($audata->name)) {
-                            $title = $audata->name;
+                        if (empty($title) && isset($au->name)) {
+                            $title = $au->name;
                         }
                     }
 
