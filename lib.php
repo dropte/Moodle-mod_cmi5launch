@@ -358,6 +358,12 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
                 };
 
+                // Store activities for this course module
+                if (typeof window.cmi5ModalActivities === 'undefined') {
+                    window.cmi5ModalActivities = {};
+                }
+                window.cmi5ModalActivities[" . $coursemodule->id . "] = " . json_encode($activities) . ";
+
                 window.launchCMI5Activity = function(event, cmid, auid, auindex, needsinit) {
                     console.log('launchCMI5Activity called:', {cmid, auid, auindex, needsinit});
 
@@ -367,27 +373,118 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         event.stopPropagation();
                     }
 
-                    // Build URL for iframe with embed mode
-                    var url = '/mod/cmi5launch/view.php?id=' + cmid + '&embed=1';
-                    if (!needsinit) {
-                        url += '&launch=' + auid + '&auindex=' + auindex;
+                    if (needsinit) {
+                        // Navigate to view.php to initialize
+                        window.location.href = '/mod/cmi5launch/view.php?id=' + cmid;
+                        return false;
                     }
 
-                    console.log('Loading in modal:', url);
+                    // Load activity directly in modal
+                    loadCMI5ModalActivity(cmid, auindex);
+
+                    return false;
+                };
+
+                function loadCMI5ModalActivity(cmid, auindex) {
+                    var activities = window.cmi5ModalActivities[cmid];
+                    if (!activities || auindex < 0 || auindex >= activities.length) {
+                        console.error('Invalid activity index:', auindex);
+                        return;
+                    }
+
+                    var activity = activities[auindex];
+                    console.log('Loading activity:', activity);
+
+                    // Build URL for launch.php
+                    var url = '/mod/cmi5launch/launch.php?launchform_registration=' +
+                              encodeURIComponent(activity.id) +
+                              '&restart=false&id=' + cmid;
 
                     // Show modal and loading spinner
                     var modal = document.getElementById('cmi5-course-modal-' + cmid);
                     var iframe = document.getElementById('cmi5-course-iframe-' + cmid);
                     var loading = document.getElementById('cmi5-course-loading-' + cmid);
+                    var dropdown = document.getElementById('cmi5-modal-dropdown-' + cmid);
+                    var title = document.getElementById('cmi5-modal-title-' + cmid);
 
                     if (modal && iframe && loading) {
-                        loading.style.display = 'flex'; // Show loading spinner
-                        modal.style.display = 'block';
-                        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-                        iframe.src = url; // Start loading iframe
-                    }
+                        // Store current index
+                        modal.dataset.currentIndex = auindex;
 
-                    return false;
+                        // Update UI
+                        loading.style.display = 'flex';
+                        modal.style.display = 'block';
+                        document.body.style.overflow = 'hidden';
+
+                        // Update title and dropdown
+                        if (title) {
+                            title.textContent = activity.title || ('Activity ' + (auindex + 1));
+                        }
+                        if (dropdown) {
+                            populateCMI5Dropdown(cmid);
+                            dropdown.value = auindex;
+                        }
+
+                        // Update navigation buttons
+                        updateCMI5NavButtons(cmid);
+
+                        // Load iframe
+                        iframe.src = url;
+                    }
+                }
+
+                function populateCMI5Dropdown(cmid) {
+                    var dropdown = document.getElementById('cmi5-modal-dropdown-' + cmid);
+                    var activities = window.cmi5ModalActivities[cmid];
+
+                    if (!dropdown || !activities) return;
+
+                    // Clear existing options except first
+                    dropdown.innerHTML = '<option value=\"\">Select Activity...</option>';
+
+                    // Add activity options
+                    activities.forEach(function(activity, index) {
+                        var option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = (index + 1) + '. ' + (activity.title || 'Activity ' + (index + 1));
+                        dropdown.appendChild(option);
+                    });
+                }
+
+                function updateCMI5NavButtons(cmid) {
+                    var modal = document.getElementById('cmi5-course-modal-' + cmid);
+                    var activities = window.cmi5ModalActivities[cmid];
+                    var prevBtn = document.getElementById('cmi5-modal-prev-' + cmid);
+                    var nextBtn = document.getElementById('cmi5-modal-next-' + cmid);
+
+                    if (!modal || !activities || !prevBtn || !nextBtn) return;
+
+                    var currentIndex = parseInt(modal.dataset.currentIndex || 0);
+
+                    // Disable/enable buttons
+                    prevBtn.disabled = currentIndex === 0;
+                    nextBtn.disabled = currentIndex === activities.length - 1;
+                    prevBtn.style.opacity = currentIndex === 0 ? '0.3' : '1';
+                    nextBtn.style.opacity = currentIndex === activities.length - 1 ? '0.3' : '1';
+                }
+
+                window.navigateCMI5Modal = function(cmid, direction) {
+                    var modal = document.getElementById('cmi5-course-modal-' + cmid);
+                    var activities = window.cmi5ModalActivities[cmid];
+
+                    if (!modal || !activities) return;
+
+                    var currentIndex = parseInt(modal.dataset.currentIndex || 0);
+                    var newIndex = currentIndex + direction;
+
+                    if (newIndex >= 0 && newIndex < activities.length) {
+                        loadCMI5ModalActivity(cmid, newIndex);
+                    }
+                };
+
+                window.jumpCMI5Modal = function(cmid, index) {
+                    if (index === '') return;
+                    loadCMI5ModalActivity(cmid, parseInt(index));
                 };
 
                 window.hideCMI5Loading = function(cmid) {
@@ -421,11 +518,44 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
     // Add modal container for course page player (hidden by default)
     $customhtml .= html_writer::start_div('cmi5-course-modal', array('id' => 'cmi5-course-modal-' . $coursemodule->id, 'style' => 'display: none;'));
     $customhtml .= html_writer::start_div('cmi5-course-modal-content');
+
+    // Modal header with navigation controls
+    $customhtml .= html_writer::start_div('cmi5-course-modal-header', array('id' => 'cmi5-modal-header-' . $coursemodule->id));
+    $customhtml .= html_writer::start_div('cmi5-modal-nav-controls');
+    $customhtml .= html_writer::tag('button', '‹', array(
+        'class' => 'cmi5-modal-nav-btn',
+        'onclick' => 'navigateCMI5Modal(' . $coursemodule->id . ', -1)',
+        'title' => 'Previous Activity',
+        'id' => 'cmi5-modal-prev-' . $coursemodule->id
+    ));
+    $customhtml .= html_writer::start_tag('select', array(
+        'class' => 'cmi5-modal-dropdown',
+        'id' => 'cmi5-modal-dropdown-' . $coursemodule->id,
+        'onchange' => 'jumpCMI5Modal(' . $coursemodule->id . ', this.value)',
+        'title' => 'Select Activity'
+    ));
+    $customhtml .= html_writer::tag('option', 'Select Activity...', array('value' => ''));
+    $customhtml .= html_writer::end_tag('select');
+    $customhtml .= html_writer::tag('button', '›', array(
+        'class' => 'cmi5-modal-nav-btn',
+        'onclick' => 'navigateCMI5Modal(' . $coursemodule->id . ', 1)',
+        'title' => 'Next Activity',
+        'id' => 'cmi5-modal-next-' . $coursemodule->id
+    ));
+    $customhtml .= html_writer::end_div(); // cmi5-modal-nav-controls
+    $customhtml .= html_writer::tag('h3', 'Activity Player', array(
+        'id' => 'cmi5-modal-title-' . $coursemodule->id,
+        'class' => 'cmi5-modal-title'
+    ));
     $customhtml .= html_writer::tag('button', '×', array(
         'class' => 'cmi5-course-modal-close',
         'onclick' => 'closeCMI5CourseModal(' . $coursemodule->id . ')',
         'title' => 'Close'
     ));
+    $customhtml .= html_writer::end_div(); // cmi5-course-modal-header
+
+    // Modal body with loading spinner and iframe
+    $customhtml .= html_writer::start_div('cmi5-course-modal-body');
     // Loading spinner
     $customhtml .= html_writer::start_div('cmi5-course-loading', array('id' => 'cmi5-course-loading-' . $coursemodule->id));
     $customhtml .= html_writer::div('', 'cmi5-course-spinner');
@@ -438,6 +568,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
         'allowfullscreen' => 'true',
         'onload' => 'hideCMI5Loading(' . $coursemodule->id . ')'
     ));
+    $customhtml .= html_writer::end_div(); // cmi5-course-modal-body
+
     $customhtml .= html_writer::end_div(); // cmi5-course-modal-content
     $customhtml .= html_writer::end_div(); // cmi5-course-modal
 

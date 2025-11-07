@@ -1060,21 +1060,93 @@
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Modal header with navigation */
+.cmi5-course-modal-header {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 15px;
+}
+
+.cmi5-modal-nav-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cmi5-modal-nav-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.cmi5-modal-nav-btn:hover:not(:disabled) {
+    background: rgba(79, 195, 247, 0.3);
+    border-color: #4FC3F7;
+}
+
+.cmi5-modal-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.cmi5-modal-dropdown {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 200px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cmi5-modal-dropdown:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #4FC3F7;
+}
+
+.cmi5-modal-dropdown option {
+    background: #2c3e50;
+    color: white;
+}
+
+.cmi5-modal-title {
+    flex: 1;
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
 }
 
 .cmi5-course-modal-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1000000;
     background: rgba(255, 255, 255, 0.1);
     border: none;
     color: white;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: bold;
     cursor: pointer;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1089,11 +1161,17 @@
     transform: scale(1.1);
 }
 
-.cmi5-course-modal iframe {
+/* Modal body */
+.cmi5-course-modal-body {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
+.cmi5-course-modal-body iframe {
     width: 100%;
     height: 100%;
     border: none;
-    border-radius: 8px;
 }
 
 @keyframes fadeIn {
