@@ -1004,6 +1004,31 @@ try {
             $austatus = get_string('not_attempted', 'cmi5launch');
 
         } else {
+            // Check if any sessions actually exist in DB (they may have been deleted after reset)
+            $sessions = json_decode($au->sessions, true);
+            $hassessions = false;
+            if ($sessions && is_array($sessions)) {
+                foreach ($sessions as $sessionid) {
+                    if ($DB->record_exists('cmi5launch_sessions', array('sessionid' => $sessionid))) {
+                        $hassessions = true;
+                        break;
+                    }
+                }
+            }
+
+            // If no valid sessions exist, treat as not attempted
+            if (!$hassessions) {
+                $austatus = get_string('not_attempted', 'cmi5launch');
+                // Continue to next AU
+                $auinfo = array();
+                $auinfo[] = $au->title;
+                $auinfo[] = $austatus;
+                $auinfo[] = " ";
+                $auindex = $au->auindex;
+                $auinfo[] = $auindex;
+                $table->data[] = $auinfo;
+                continue;
+            }
 
             // Retrieve AUs moveon specification.
             $aumoveon = $au->moveon;
