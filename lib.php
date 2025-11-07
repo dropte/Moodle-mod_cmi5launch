@@ -179,10 +179,63 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
                 }
             }
-        } else if ($userscourse && !empty($cmi5launch->aus)) {
+        } else if ($userscourse && empty($userscourse->aus) && !empty($cmi5launch->aus)) {
             // User has a record but AUs not saved yet - show from manifest
             // Parse AU data directly from the CMI5 launch record as preview
-            error_log('CMI5: Entering fallback block');
+            error_log('CMI5: Entering fallback block - user has course record but no AUs saved');
+            $ausdata = json_decode($cmi5launch->aus);
+            error_log('CMI5: ausdata type=' . gettype($ausdata) . ', is_array=' . (is_array($ausdata) ? 'yes' : 'no'));
+            if ($ausdata && is_array($ausdata)) {
+                error_log('CMI5: Processing ' . count($ausdata) . ' AUs from manifest');
+                foreach ($ausdata as $index => $audata) {
+                    $title = '';
+
+                    // Try to extract title from various possible structures
+                    if (is_object($audata)) {
+                        if (isset($audata->title)) {
+                            // Title structure: title: [{ text: "Activity Name" }]
+                            if (is_array($audata->title) && count($audata->title) > 0) {
+                                $titleobj = $audata->title[0];
+                                if (is_object($titleobj) && isset($titleobj->text)) {
+                                    $title = $titleobj->text;
+                                } else if (is_string($audata->title[0])) {
+                                    $title = $audata->title[0];
+                                }
+                            } else if (is_string($audata->title)) {
+                                $title = $audata->title;
+                            }
+                        }
+                        // Also check other possible name fields
+                        if (empty($title) && isset($audata->activityName)) {
+                            $title = $audata->activityName;
+                        }
+                        if (empty($title) && isset($audata->name)) {
+                            $title = $audata->name;
+                        }
+                    }
+
+                    // Fallback to numbered activity
+                    if (empty($title)) {
+                        $title = 'Activity ' . ($index + 1);
+                    }
+
+                    // Always add the activity
+                    $activities[] = array(
+                        'id' => 'init_' . $index,  // Special ID to indicate needs init
+                        'title' => $title,
+                        'index' => $index,
+                        'needsinit' => true,
+                        'status' => 'notstarted'  // Fallback activities are always not started
+                    );
+                    error_log('CMI5: Added activity ' . $index . ': ' . $title);
+                }
+                error_log('CMI5: Total activities added: ' . count($activities));
+            } else {
+                error_log('CMI5: ausdata check failed - not array or empty');
+            }
+        } else if (!$userscourse && !empty($cmi5launch->aus)) {
+            // User has no course record yet (brand new) - show from manifest
+            error_log('CMI5: Entering fallback block - no user course record, loading from manifest');
             $ausdata = json_decode($cmi5launch->aus);
             error_log('CMI5: ausdata type=' . gettype($ausdata) . ', is_array=' . (is_array($ausdata) ? 'yes' : 'no'));
             if ($ausdata && is_array($ausdata)) {
@@ -234,9 +287,6 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 error_log('CMI5: ausdata check failed - not array or empty');
             }
         }
-        // For users who haven't started yet, we don't show the accordion
-        // They'll see "Begin Exercise" button instead which takes them to view.php
-        // Once they've started, they'll see this accordion on return visits
     } catch (Exception $e) {
         // No activities loaded - will show "Begin Exercise" button
         // Log error for debugging
