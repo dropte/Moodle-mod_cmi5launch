@@ -29,7 +29,6 @@ use mod_cmi5launch\local\customException;
 
 require_once(dirname(dirname(dirname(__FILE__))) . '/config.php');
 require('header.php');
-require_once("$CFG->dirroot/lib/outputcomponents.php");
 
 // Include the errorover (error override) funcs.
 require_once ($CFG->dirroot . '/mod/cmi5launch/classes/local/errorover.php');

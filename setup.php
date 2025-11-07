@@ -39,10 +39,7 @@ function goback(){
 
 <?php
 require_once(dirname(dirname(dirname(__FILE__))) . '/config.php');
-require_once($CFG->libdir.'/tablelib.php');
 require_once($CFG->dirroot.'/mod/cmi5launch/locallib.php');
-require_once($CFG->libdir.'/formslib.php');
-require_once($CFG->dirroot. '/reportbuilder/classes/local/report/column.php');
 
 define('CMI5LAUNCH_REPORT_DEFAULT_PAGE_SIZE', 20);
 define('CMI5LAUNCH_REPORT_ATTEMPTS_ALL_STUDENTS', 0);
