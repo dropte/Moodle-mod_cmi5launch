@@ -295,6 +295,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
             array('id' => 'activities-' . $coursemodule->id, 'style' => 'display: none;'));
 
         foreach ($activities as $activity) {
+            // Pass boolean as JavaScript boolean, not string
             $needsinit = isset($activity['needsinit']) && $activity['needsinit'] ? 'true' : 'false';
             $status = $activity['status'] ?? 'notstarted';
 
@@ -365,7 +366,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 window.cmi5ModalActivities[" . $coursemodule->id . "] = " . json_encode($activities) . ";
 
                 window.launchCMI5Activity = function(event, cmid, auid, auindex, needsinit) {
-                    console.log('launchCMI5Activity called:', {cmid, auid, auindex, needsinit});
+                    console.log('launchCMI5Activity called:', {cmid, auid, auindex, needsinit, needsinitType: typeof needsinit});
 
                     // Prevent default link behavior
                     if (event) {
@@ -373,8 +374,13 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         event.stopPropagation();
                     }
 
-                    if (needsinit) {
+                    // Check if needs initialization (convert to boolean if string)
+                    var needsInit = (needsinit === true || needsinit === 'true');
+                    console.log('needsInit evaluated as:', needsInit);
+
+                    if (needsInit) {
                         // Navigate to view.php to initialize
+                        console.log('Navigating to view.php for initialization');
                         window.location.href = '/mod/cmi5launch/view.php?id=' + cmid;
                         return false;
                     }
