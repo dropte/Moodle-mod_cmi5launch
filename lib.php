@@ -219,6 +219,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         $title = 'Activity ' . ($index + 1);
                     }
 
+                    error_log('CMI5: About to add activity with title: ' . $title . ', index: ' . $index);
+
                     // Always add the activity
                     $activities[] = array(
                         'id' => 'init_' . $index,  // Special ID to indicate needs init
@@ -227,7 +229,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         'needsinit' => true,
                         'status' => 'notstarted'  // Fallback activities are always not started
                     );
-                    error_log('CMI5: Added activity ' . $index . ': ' . $title);
+                    error_log('CMI5: Added activity ' . $index . ': ' . $title . ', total activities now: ' . count($activities));
                 }
                 error_log('CMI5: Total activities added: ' . count($activities));
             } else {
@@ -272,6 +274,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         $title = 'Activity ' . ($index + 1);
                     }
 
+                    error_log('CMI5: About to add activity with title: ' . $title . ', index: ' . $index);
+
                     // Always add the activity
                     $activities[] = array(
                         'id' => 'init_' . $index,  // Special ID to indicate needs init
@@ -280,7 +284,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         'needsinit' => true,
                         'status' => 'notstarted'  // Fallback activities are always not started
                     );
-                    error_log('CMI5: Added activity ' . $index . ': ' . $title);
+                    error_log('CMI5: Added activity ' . $index . ': ' . $title . ', total activities now: ' . count($activities));
                 }
                 error_log('CMI5: Total activities added: ' . count($activities));
             } else {
