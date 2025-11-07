@@ -300,6 +300,43 @@ if ($showbutton) {
         '10',
         PARAM_INT));
 
+    // AI Insights Settings
+    $settings->add(new admin_setting_heading('cmi5launch/ai_insights',
+        get_string('ai_insights_heading', 'cmi5launch'),
+        get_string('ai_insights_heading_help', 'cmi5launch')));
+
+    // AI Provider selection
+    $ai_providers = array(
+        '' => get_string('ai_provider_none', 'cmi5launch'),
+        'openai' => get_string('ai_provider_openai', 'cmi5launch'),
+        'claude' => get_string('ai_provider_claude', 'cmi5launch'),
+        'local' => get_string('ai_provider_local', 'cmi5launch')
+    );
+
+    $settings->add(new admin_setting_configselect('cmi5launch/ai_provider',
+        get_string('ai_provider', 'cmi5launch'),
+        get_string('ai_provider_help', 'cmi5launch'),
+        '',
+        $ai_providers));
+
+    // AI API Key
+    $settings->add(new admin_setting_configpasswordunmask('cmi5launch/ai_api_key',
+        get_string('ai_api_key', 'cmi5launch'),
+        get_string('ai_api_key_help', 'cmi5launch'),
+        ''));
+
+    // AI Model selection (optional)
+    $settings->add(new admin_setting_configtext('cmi5launch/ai_model',
+        get_string('ai_model', 'cmi5launch'),
+        get_string('ai_model_help', 'cmi5launch'),
+        ''));
+
+    // Local AI endpoint (for local LLM)
+    $settings->add(new admin_setting_configtext('cmi5launch/ai_local_endpoint',
+        get_string('ai_local_endpoint', 'cmi5launch'),
+        get_string('ai_local_endpoint_help', 'cmi5launch'),
+        ''));
+
     }
 
     ?> 

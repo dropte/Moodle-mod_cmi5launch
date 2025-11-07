@@ -442,3 +442,19 @@ $string['aiapikey'] = 'API Key';
 $string['aiapikey_help'] = 'API key for the selected AI provider';
 $string['view_details'] = 'View Details';
 $string['hide_details'] = 'Hide Details';
+
+// AI Insights Settings
+$string['ai_insights_heading'] = 'AI-Powered Insights';
+$string['ai_insights_heading_help'] = 'Configure AI providers to generate insights from user progress and LRS data';
+$string['ai_provider'] = 'AI Provider';
+$string['ai_provider_help'] = 'Select an AI provider for generating insights about user progress and engagement';
+$string['ai_provider_none'] = 'Disabled';
+$string['ai_provider_openai'] = 'OpenAI (GPT)';
+$string['ai_provider_claude'] = 'Anthropic Claude';
+$string['ai_provider_local'] = 'Local LLM';
+$string['ai_api_key'] = 'API Key';
+$string['ai_api_key_help'] = 'Enter your API key for the selected provider (not required for local LLM)';
+$string['ai_model'] = 'AI Model';
+$string['ai_model_help'] = 'Optional: Specify a model (e.g., "gpt-4", "claude-3-sonnet"). Leave empty to use provider default';
+$string['ai_local_endpoint'] = 'Local LLM Endpoint';
+$string['ai_local_endpoint_help'] = 'For local LLM only: Enter the API endpoint URL (e.g., http://localhost:11434/api/generate)';
