@@ -1354,3 +1354,240 @@
         transform: rotate(360deg);
     }
 }
+
+/* ==================== Admin Dashboard Styles ==================== */
+
+.cmi5-admin-overview,
+.cmi5-admin-analytics,
+.cmi5-admin-insights {
+    margin-top: 1.5rem;
+}
+
+/* Summary Statistics Cards */
+.cmi5-admin-stats {
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--body-bg, #fff);
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: var(--border-radius, 0.375rem);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-0.125rem);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--primary, #0f6cbf);
+    margin: 0;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: var(--gray-600, #6c757d);
+    margin: 0.5rem 0 0 0;
+    font-weight: 500;
+}
+
+/* Admin Tables */
+.cmi5-admin-table {
+    margin-top: 1rem;
+}
+
+.cmi5-admin-table th {
+    background: var(--primary, #0f6cbf);
+    color: #fff;
+    font-weight: 600;
+    padding: 0.75rem;
+}
+
+.cmi5-admin-table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.cmi5-admin-table tbody tr:hover {
+    background: var(--gray-100, #f8f9fa);
+}
+
+/* Status Badges */
+.badge {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.875rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #28a745;
+    color: #fff;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.badge-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.badge-danger {
+    background: #dc3545;
+    color: #fff;
+}
+
+/* Analytics Section */
+.analytics-section {
+    margin-top: 2rem;
+}
+
+.analytics-section h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary, #0f6cbf);
+    font-weight: 600;
+}
+
+/* Buttons */
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.25rem;
+}
+
+.btn-danger {
+    background: var(--danger, #dc3545);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-primary {
+    background: var(--primary, #0f6cbf);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #0a58ca;
+}
+
+/* Responsive Grid */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -0.75rem;
+    margin-left: -0.75rem;
+}
+
+.col-md-3,
+.col-md-4 {
+    position: relative;
+    width: 100%;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+    .col-md-3 {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+
+    .col-md-4 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+}
+
+/* Alerts */
+.alert {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.alert-success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--body-color, #212529);
+    background: var(--body-bg, #fff);
+    border: 1px solid var(--border-color, #ced4da);
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: var(--primary, #0f6cbf);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(15, 108, 191, 0.25);
+}
+
+/* Spacing utilities */
+.mt-4 {
+    margin-top: 1.5rem !important;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem !important;
+}

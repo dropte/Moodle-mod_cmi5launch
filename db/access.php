@@ -76,5 +76,25 @@ $capabilities = array(
         ),
         'clonepermissionsfrom' => 'moodle/course:manageactivities',
     ),
+
+    'mod/cmi5launch:viewadmindashboard' => array(
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'editingteacher' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ),
+    ),
+
+    'mod/cmi5launch:resetuserprogress' => array(
+        'riskbitmask' => RISK_DATALOSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ),
+    ),
 );
 

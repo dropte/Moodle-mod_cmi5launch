@@ -1326,6 +1326,20 @@ function cmi5launch_extend_navigation(navigation_node $navref, stdclass $course,
  * @param navigation_node $cmi5launchnode {@link navigation_node}
  */
 function cmi5launch_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $cmi5launchnode = null) {
+    global $PAGE;
+
+    // Only add for users who can view the admin dashboard
+    if (has_capability('mod/cmi5launch:viewadmindashboard', $PAGE->cm->context)) {
+        $url = new moodle_url('/mod/cmi5launch/admin_dashboard.php', array('id' => $PAGE->cm->id));
+        $cmi5launchnode->add(
+            get_string('admindashboard', 'cmi5launch'),
+            $url,
+            navigation_node::TYPE_SETTING,
+            null,
+            'cmi5launch_admin_dashboard',
+            new pix_icon('i/report', '')
+        );
+    }
 }
 
 // Called by Moodle core.
