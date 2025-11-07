@@ -135,31 +135,8 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             windowId: null
         };
 
-        // Build AU list from PHP
-        var availableAUs = [
-            <?php
-            $auListJS = array();
-            if (isset($auids) && is_array($auids)) {
-                foreach ($auids as $index => $auid) {
-                    try {
-                        $au = $getaus($auid);
-                        if ($au && isset($au->title)) {
-                            // Use proper JSON encoding for safety
-                            $auListJS[] = json_encode(array(
-                                'id' => $auid,
-                                'title' => $au->title,
-                                'index' => $index
-                            ));
-                        }
-                    } catch (Exception $e) {
-                        // Skip AUs that can't be loaded
-                        continue;
-                    }
-                }
-            }
-            echo count($auListJS) > 0 ? implode(",\n            ", $auListJS) : '';
-            ?>
-        ];
+        // Build AU list from PHP - will be populated after $auids is available
+        var availableAUs = [];
 
         // Debug: Log the AU list to console
         console.log('Available AUs:', availableAUs);
@@ -734,6 +711,33 @@ try {
     // If there is an error, display it.
     throw new customException('Creating or retrieving user course record. Contact your system administrator with error: ' . $e->getMessage(), 0);
 }
+
+// Build JavaScript array of available AUs now that $auids is populated
+$auListJS = array();
+if (isset($auids) && is_array($auids)) {
+    foreach ($auids as $index => $auid) {
+        try {
+            $au = $getaus($auid);
+            if ($au && isset($au->title)) {
+                // Use proper JSON encoding for safety
+                $auListJS[] = array(
+                    'id' => $auid,
+                    'title' => $au->title,
+                    'index' => $index
+                );
+            }
+        } catch (Exception $e) {
+            // Skip AUs that can't be loaded
+            continue;
+        }
+    }
+}
+
+// Output JavaScript to populate the availableAUs array
+echo '<script>';
+echo 'availableAUs = ' . json_encode($auListJS) . ';';
+echo 'console.log("AUs loaded:", availableAUs);';
+echo '</script>';
 
 // Array to hold info for table population.
 $tabledata = array();
