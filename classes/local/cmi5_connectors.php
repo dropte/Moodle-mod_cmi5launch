@@ -357,6 +357,12 @@ class cmi5_connectors {
 
         $userscourse = $DB->get_record('cmi5launch_usercourse', ['courseid'  => $record->courseid, 'userid'  => $USER->id]);
 
+        // Check if user course record exists (may have been reset)
+        if (!$userscourse) {
+            throw new \moodle_exception('usercoursenotfound', 'cmi5launch', '', null,
+                'User course registration not found. Please refresh the page to reinitialize.');
+        }
+
         $registrationid = $userscourse->registrationid;
 
         $homepage = $settings['cmi5launchcustomacchp'];
