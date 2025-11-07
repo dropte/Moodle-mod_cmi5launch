@@ -202,6 +202,10 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
                             </div>
                         </div>
                         <div class="cmi5-modal-body">
+                            <div class="loading-overlay" id="loading-overlay-${windowId}" style="display: none;">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">Loading activity...</div>
+                            </div>
                             <iframe id="cmi5-player-iframe-${windowId}" src="" frameborder="0" allowfullscreen></iframe>
                         </div>
                         <div class="resize-handle resize-handle-br"></div>
@@ -236,6 +240,16 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
 
             // Set iframe source and show modal
             const iframe = document.getElementById('cmi5-player-iframe-' + windowId);
+            const loadingOverlay = document.getElementById('loading-overlay-' + windowId);
+
+            // Show loading spinner
+            if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
+            // Hide spinner when iframe loads
+            iframe.onload = function() {
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+            };
+
             iframe.src = url;
 
             // Update navigation controls
@@ -270,9 +284,19 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
                 const au = availableAUs[newIndex];
                 const url = `launch.php?launchform_registration=${encodeURIComponent(au.id)}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
 
+                // Show loading spinner
+                const loadingOverlay = document.getElementById('loading-overlay-' + windowId);
+                if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
                 // Update iframe
                 const iframe = document.getElementById('cmi5-player-iframe-' + windowId);
-                if (iframe) iframe.src = url;
+                if (iframe) {
+                    // Hide spinner when loaded
+                    iframe.onload = function() {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    };
+                    iframe.src = url;
+                }
 
                 // Update state
                 state.currentAUIndex = newIndex;
@@ -546,8 +570,10 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
                     'background': bgColor,
                     'color': 'white',
                     'border-radius': '5px',
-                    'box-shadow': '0 4px 6px rgba(0,0,0,0.2)',
-                    'z-index': '10000',
+                    'box-shadow': '0 6px 16px rgba(0,0,0,0.4)',
+                    'z-index': '99999',
+                    'font-weight': 'bold',
+                    'font-size': '14px',
                     'animation': 'slideIn 0.3s ease'
                 });
 
