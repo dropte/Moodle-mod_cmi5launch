@@ -144,8 +144,12 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
                     try {
                         $au = $getaus($auid);
                         if ($au && isset($au->title)) {
-                            // Create actual JavaScript objects, not strings
-                            $auListJS[] = '{id: "' . addslashes($auid) . '", title: "' . str_replace('"', '\\"', $au->title) . '", index: ' . $index . '}';
+                            // Use proper JSON encoding for safety
+                            $auListJS[] = json_encode(array(
+                                'id' => $auid,
+                                'title' => $au->title,
+                                'index' => $index
+                            ));
                         }
                     } catch (Exception $e) {
                         // Skip AUs that can't be loaded
@@ -157,10 +161,16 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             ?>
         ];
 
+        // Debug: Log the AU list to console
+        console.log('Available AUs:', availableAUs);
+
         // Function to run when the experience is launched (on click).
         function mod_cmi5launch_launchexperience(auid, windowId) {
+            console.log('Launch called with auid:', auid, 'availableAUs:', availableAUs);
+
             // Check if we have any AUs available
             if (!availableAUs || availableAUs.length === 0) {
+                console.error('No AUs available!');
                 showNotification('No activities available', 'error');
                 return;
             }
@@ -170,6 +180,7 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
 
             // Find the AU index
             const auIndex = availableAUs.findIndex(au => au.id === auid);
+            console.log('Found AU at index:', auIndex);
             const finalIndex = auIndex >= 0 ? auIndex : 0;
 
             // Launch directly in modal player
