@@ -77,6 +77,10 @@ $PAGE->requires->jquery();
 // Output starts here.
 echo $OUTPUT->header();
 
+// Check if auto-launch from course page
+$autolaunchauid = optional_param('launch', '', PARAM_TEXT);
+$autolaunchindex = optional_param('auindex', 0, PARAM_INT);
+
 // Reload cmi5 course instance.
 $record = $DB->get_record('cmi5launch', array('id' => $cmi5launch->id));
 
@@ -819,6 +823,20 @@ if (isset($auids) && is_array($auids)) {
 echo '<script>';
 echo 'availableAUs = ' . json_encode($auListJS) . ';';
 echo 'console.log("AUs loaded:", availableAUs);';
+
+// Auto-launch if coming from course page
+if (!empty($autolaunchauid)) {
+    echo '
+    // Auto-launch activity from course page
+    window.addEventListener("DOMContentLoaded", function() {
+        console.log("Auto-launching AU:", "' . $autolaunchauid . '");
+        setTimeout(function() {
+            mod_cmi5launch_launchexperience("' . $autolaunchauid . '", "main");
+        }, 500);
+    });
+    ';
+}
+
 echo '</script>';
 
 // Array to hold info for table population.

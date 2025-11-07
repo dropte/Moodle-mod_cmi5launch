@@ -889,3 +889,103 @@
 .cmi5-launch-text {
     font-weight: 700;
 }
+
+/* Toggle button for accordion */
+.cmi5-course-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: white;
+    color: #667eea;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border: none;
+    text-transform: none;
+    cursor: pointer;
+}
+
+.cmi5-course-toggle-btn:hover {
+    background: #f8f9ff;
+    color: #764ba2;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.cmi5-course-toggle-btn.expanded {
+    background: #f8f9ff;
+}
+
+.cmi5-toggle-icon {
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.cmi5-toggle-text {
+    font-weight: 700;
+}
+
+/* Activities accordion */
+.cmi5-activities-accordion {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cmi5-activity-item {
+    margin: 8px 0;
+}
+
+.cmi5-activity-launch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cmi5-activity-launch:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(4px);
+    text-decoration: none;
+    color: white;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.cmi5-activity-launch .activity-icon {
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+}
+
+.cmi5-activity-launch .activity-title {
+    flex: 1;
+    font-weight: 500;
+    font-size: 15px;
+}

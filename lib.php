@@ -99,22 +99,20 @@ function cmi5launch_supports($feature) {
  * @return cached_cm_info|null
  */
 function cmi5launch_get_coursemodule_info($coursemodule) {
-    global $DB;
+    global $DB, $USER, $CFG;
+
+    require_once($CFG->dirroot . '/mod/cmi5launch/locallib.php');
 
     $cmi5launch = $DB->get_record('cmi5launch', array('id' => $coursemodule->instance), '*', MUST_EXIST);
 
     $info = new cached_cm_info();
     $info->name = $cmi5launch->name;
 
-    if ($coursemodule->showdescription) {
-        // Convert intro to HTML and trim it
-        $info->content = format_module_intro('cmi5launch', $cmi5launch, $coursemodule->id, false);
-    }
+    // Get AU helpers
+    $auh = new au_helpers();
+    $getaus = $auh->cmi5launch_get_au_from_db();
 
-    // Add custom HTML for a styled launch button
-    $viewurl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
-
-    $customhtml = html_writer::start_div('cmi5launch-course-card');
+    $customhtml = html_writer::start_div('cmi5launch-course-card', array('id' => 'cmi5card-' . $coursemodule->id));
     $customhtml .= html_writer::start_div('cmi5launch-card-content');
 
     // Add the intro/description if available
@@ -122,14 +120,120 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
         $customhtml .= html_writer::div(format_text($cmi5launch->intro, $cmi5launch->introformat), 'cmi5launch-card-intro');
     }
 
-    // Add a styled launch button
+    // Try to load activities
+    $activities = array();
+    try {
+        // Get user course record to access AUs
+        $userscourse = $DB->get_record('cmi5launch_usercourse',
+            array('courseid' => $cmi5launch->cmi5launchid, 'userid' => $USER->id));
+
+        if ($userscourse && !empty($userscourse->aus)) {
+            $auids = json_decode($userscourse->aus);
+            if (is_array($auids)) {
+                foreach ($auids as $index => $auid) {
+                    try {
+                        $au = $getaus($auid);
+                        if ($au && isset($au->title)) {
+                            $activities[] = array(
+                                'id' => $auid,
+                                'title' => $au->title,
+                                'index' => $index
+                            );
+                        }
+                    } catch (Exception $e) {
+                        continue;
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) {
+        // No activities loaded - user probably hasn't started yet
+    }
+
+    // Add accordion toggle button
     $customhtml .= html_writer::start_div('cmi5launch-card-actions');
-    $customhtml .= html_writer::link(
-        $viewurl,
-        html_writer::span('▶', 'cmi5-launch-icon') . html_writer::span('Begin Exercise', 'cmi5-launch-text'),
-        array('class' => 'btn cmi5-course-launch-btn', 'title' => 'Launch ' . $cmi5launch->name)
-    );
+
+    if (!empty($activities)) {
+        $customhtml .= html_writer::tag('button',
+            html_writer::span('▼', 'cmi5-toggle-icon', array('id' => 'toggle-icon-' . $coursemodule->id)) .
+            html_writer::span('View Activities (' . count($activities) . ')', 'cmi5-toggle-text'),
+            array(
+                'class' => 'btn cmi5-course-toggle-btn',
+                'onclick' => 'toggleCMI5Activities(' . $coursemodule->id . ')',
+                'type' => 'button',
+                'id' => 'toggle-btn-' . $coursemodule->id
+            )
+        );
+    } else {
+        $viewurl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
+        $customhtml .= html_writer::link(
+            $viewurl,
+            html_writer::span('▶', 'cmi5-launch-icon') . html_writer::span('Begin Exercise', 'cmi5-launch-text'),
+            array('class' => 'btn cmi5-course-launch-btn', 'title' => 'Launch ' . $cmi5launch->name)
+        );
+    }
+
     $customhtml .= html_writer::end_div(); // cmi5launch-card-actions
+
+    // Add activities accordion (hidden by default)
+    if (!empty($activities)) {
+        $customhtml .= html_writer::start_div('cmi5-activities-accordion',
+            array('id' => 'activities-' . $coursemodule->id, 'style' => 'display: none;'));
+
+        foreach ($activities as $activity) {
+            $launchUrl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
+            $customhtml .= html_writer::start_div('cmi5-activity-item');
+            $customhtml .= html_writer::link(
+                $launchUrl,
+                html_writer::span('▶', 'activity-icon') .
+                html_writer::span($activity['title'], 'activity-title'),
+                array(
+                    'class' => 'cmi5-activity-launch',
+                    'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ');',
+                    'data-auid' => $activity['id'],
+                    'data-auindex' => $activity['index']
+                )
+            );
+            $customhtml .= html_writer::end_div();
+        }
+
+        $customhtml .= html_writer::end_div(); // activities accordion
+
+        // Add inline JavaScript for this specific card
+        $activitiesJson = json_encode($activities);
+        $customhtml .= html_writer::script("
+            if (typeof window.cmi5Activities === 'undefined') {
+                window.cmi5Activities = {};
+            }
+            window.cmi5Activities[{$coursemodule->id}] = {$activitiesJson};
+
+            // Add global functions if not already defined
+            if (typeof window.toggleCMI5Activities === 'undefined') {
+                window.toggleCMI5Activities = function(cmid) {
+                    var accordion = document.getElementById('activities-' + cmid);
+                    var icon = document.getElementById('toggle-icon-' + cmid);
+                    var btn = document.getElementById('toggle-btn-' + cmid);
+
+                    if (accordion.style.display === 'none') {
+                        accordion.style.display = 'block';
+                        if (icon) icon.textContent = '▲';
+                        if (btn) btn.classList.add('expanded');
+                    } else {
+                        accordion.style.display = 'none';
+                        if (icon) icon.textContent = '▼';
+                        if (btn) btn.classList.remove('expanded');
+                    }
+                };
+
+                window.launchCMI5Activity = function(cmid, auid, auindex) {
+                    // Navigate to view.php with auto-launch parameter
+                    var url = '/mod/cmi5launch/view.php?id=' + cmid + '&launch=' + auid + '&auindex=' + auindex;
+                    window.location.href = url;
+                    return false;
+                };
+            }
+        ");
+    }
 
     $customhtml .= html_writer::end_div(); // cmi5launch-card-content
     $customhtml .= html_writer::end_div(); // cmi5launch-course-card
