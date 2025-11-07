@@ -110,7 +110,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
     // Get AU helpers
     $auh = new au_helpers();
-    $getaus = $auh->cmi5launch_get_au_from_db();
+    $getaus = $auh->get_cmi5launch_retrieve_aus_from_db();
 
     $customhtml = html_writer::start_div('cmi5launch-course-card', array('id' => 'cmi5card-' . $coursemodule->id));
     $customhtml .= html_writer::start_div('cmi5launch-card-content');
