@@ -39,6 +39,7 @@ echo "📁 Copying class files..."
 kubectl cp classes/local/cmi5_connectors.php $POD_NAME:$PLUGIN_PATH/classes/local/cmi5_connectors.php
 kubectl cp classes/local/ai_insights.php $POD_NAME:$PLUGIN_PATH/classes/local/ai_insights.php
 kubectl cp classes/local/session_helpers.php $POD_NAME:$PLUGIN_PATH/classes/local/session_helpers.php
+kubectl cp classes/local/grade_helpers.php $POD_NAME:$PLUGIN_PATH/classes/local/grade_helpers.php
 
 echo "📁 Copying language files..."
 kubectl cp lang/en/cmi5launch.php $POD_NAME:$PLUGIN_PATH/lang/en/cmi5launch.php

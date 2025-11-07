@@ -950,6 +950,11 @@ try {
                         // Get the session from DB with session id.
                         $ausession = $DB->get_record('cmi5launch_sessions', array('sessionid' => $value));
 
+                        // Skip if session doesn't exist (may have been reset)
+                        if (!$ausession) {
+                            continue;
+                        }
+
                         if ($ausession->iscompleted == "1") {
                             $completedfound = true;
                         }

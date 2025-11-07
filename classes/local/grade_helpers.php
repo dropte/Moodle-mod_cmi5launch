@@ -247,6 +247,11 @@ class grade_helpers
                             // Retrieve new info (if any) from CMI5 player and LRS on session.
                             $session = $updatesession($progress, $cmi5, $sessionid, $cmi5launch->id, $user);
 
+                            // Skip if session doesn't exist (may have been reset)
+                            if (!$session) {
+                                continue;
+                            }
+
                             // Now if the session is complete, passed, or terminated, we want to update the AU.
                             // These come in order, so the last one is the current status, so update on each one,
                             // overwrite as you go, and the last one if final.
