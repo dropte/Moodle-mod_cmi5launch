@@ -28,6 +28,9 @@ kubectl cp styles.css $POD_NAME:$PLUGIN_PATH/styles.css
 echo "📁 Copying language files..."
 kubectl cp lang/en/cmi5launch.php $POD_NAME:$PLUGIN_PATH/lang/en/cmi5launch.php
 
+echo "📁 Copying icon files..."
+kubectl cp pix/monologo.svg $POD_NAME:$PLUGIN_PATH/pix/monologo.svg
+
 echo "🔧 Fixing permissions..."
 kubectl exec $POD_NAME -- chown -R www-data:www-data $PLUGIN_PATH
 kubectl exec $POD_NAME -- chmod -R 755 $PLUGIN_PATH

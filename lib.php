@@ -819,9 +819,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
     $info->content = $customhtml;
 
-    // Use theme-appropriate icon instead of custom logo
-    // Use FontAwesome play-circle icon which matches Moodle's style
-    $info->icon = 'i/play';  // Moodle's built-in play icon
+    // Use theme-appropriate icon (monologo.svg uses currentColor to adapt to theme)
+    $info->icon = 'monologo';
 
     return $info;
 }
