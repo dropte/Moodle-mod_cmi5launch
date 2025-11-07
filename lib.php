@@ -532,18 +532,16 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     var activity = activities[auindex];
                     console.log('Loading activity:', activity, 'needsInit:', needsInit);
 
-                    // Build URL - use view.php in embed mode for initialization, otherwise launch.php
+                    // Build URL - use auindex for launching to avoid stale AU IDs after reset
                     var url;
                     if (needsInit) {
-                        // Load view.php in embed mode with AU ID for auto-launch after init
-                        url = '/mod/cmi5launch/view.php?embed=1&id=' + cmid + '&launch=' + encodeURIComponent(activity.id);
-                        console.log('Loading view.php in embed mode with AU ID:', activity.id);
+                        // Load view.php in embed mode with AU index for auto-launch after init
+                        url = '/mod/cmi5launch/view.php?embed=1&id=' + cmid + '&auindex=' + auindex;
+                        console.log('Loading view.php in embed mode with AU index:', auindex);
                     } else {
-                        // Load activity directly via launch.php
-                        url = '/mod/cmi5launch/launch.php?launchform_registration=' +
-                              encodeURIComponent(activity.id) +
-                              '&restart=false&id=' + cmid;
-                        console.log('Loading launch.php directly');
+                        // Load activity directly via launch.php using auindex
+                        url = '/mod/cmi5launch/launch.php?auindex=' + auindex + '&restart=false&id=' + cmid;
+                        console.log('Loading launch.php directly with auindex:', auindex);
                     }
 
                     // Show modal and loading spinner

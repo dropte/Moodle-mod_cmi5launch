@@ -218,8 +218,9 @@ $savesession = $sessionhelper->cmi5launch_get_create_session();
 $cmi5launchretrieveurl = $connectors->cmi5launch_get_retrieve_url();
 $retrieveaus = $auhelper->get_cmi5launch_retrieve_aus_from_db();
 
-// Retrieve the registration id from previous page.
-$id = required_param('launchform_registration', PARAM_TEXT);
+// Retrieve the AU identifier - either auindex or legacy AU ID
+$auindex = optional_param('auindex', -1, PARAM_INT);
+$auid = optional_param('launchform_registration', '', PARAM_TEXT);
 
 // Reload cmi5 instance.
 $record = $DB->get_record('cmi5launch', array('id' => $cmi5launch->id));
@@ -228,8 +229,12 @@ $userscourse = $DB->get_record('cmi5launch_usercourse', ['courseid'  => $record-
 
 // Check if user course exists - if not, redirect to view.php to reinitialize
 if (!$userscourse) {
-    // User's registration was likely reset - redirect to view.php for reinitialization
-    $viewurl = new \moodle_url('/mod/cmi5launch/view.php', array('id' => $cm->id));
+    // User's registration was likely reset - redirect to view.php for reinitialization with auindex
+    $params = array('id' => $cm->id, 'embed' => 1);
+    if ($auindex >= 0) {
+        $params['auindex'] = $auindex;
+    }
+    $viewurl = new \moodle_url('/mod/cmi5launch/view.php', $params);
     redirect($viewurl, get_string('reinitializing', 'cmi5launch'), 2, \core\output\notification::NOTIFY_INFO);
     exit;
 }
@@ -249,10 +254,22 @@ set_error_handler('mod_cmi5launch\local\custom_warning', E_WARNING);
 
 try {
 
-    // Retrieve AUs.
-    $au = $retrieveaus($id);
-    // Retrieve the au index.
-    $auindex = $au->auindex;
+    // Retrieve AU - if auindex provided, look up by index; otherwise use AU ID
+    if ($auindex >= 0) {
+        // Look up AU by index for this user
+        $au = $DB->get_record('cmi5launch_aus', array(
+            'auindex' => $auindex,
+            'userid' => $USER->id,
+            'moodlecourseid' => $cmi5launch->id
+        ));
+        if (!$au) {
+            throw new \Exception("AU not found for index $auindex. User course may need initialization.");
+        }
+    } else {
+        // Legacy: retrieve by AU ID
+        $au = $retrieveaus($auid);
+        $auindex = $au->auindex;
+    }
 
     if ($restart)
     {
