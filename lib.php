@@ -157,24 +157,37 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
             if ($ausdata && is_array($ausdata)) {
                 foreach ($ausdata as $index => $audata) {
                     $title = '';
-                    if (is_object($audata) && isset($audata->title)) {
-                        // Title structure: title: [{ text: "Activity Name" }]
-                        if (is_array($audata->title) && count($audata->title) > 0) {
-                            $titleobj = $audata->title[0];
-                            if (is_object($titleobj) && isset($titleobj->text)) {
-                                $title = $titleobj->text;
-                            } else if (is_string($audata->title[0])) {
-                                $title = $audata->title[0];
+
+                    // Try to extract title from various possible structures
+                    if (is_object($audata)) {
+                        if (isset($audata->title)) {
+                            // Title structure: title: [{ text: "Activity Name" }]
+                            if (is_array($audata->title) && count($audata->title) > 0) {
+                                $titleobj = $audata->title[0];
+                                if (is_object($titleobj) && isset($titleobj->text)) {
+                                    $title = $titleobj->text;
+                                } else if (is_string($audata->title[0])) {
+                                    $title = $audata->title[0];
+                                }
+                            } else if (is_string($audata->title)) {
+                                $title = $audata->title;
                             }
-                        } else if (is_string($audata->title)) {
-                            $title = $audata->title;
+                        }
+                        // Also check other possible name fields
+                        if (empty($title) && isset($audata->activityName)) {
+                            $title = $audata->activityName;
+                        }
+                        if (empty($title) && isset($audata->name)) {
+                            $title = $audata->name;
                         }
                     }
 
+                    // Fallback to numbered activity
                     if (empty($title)) {
                         $title = 'Activity ' . ($index + 1);
                     }
 
+                    // Always add the activity
                     $activities[] = array(
                         'id' => 'init_' . $index,  // Special ID to indicate needs init
                         'title' => $title,
