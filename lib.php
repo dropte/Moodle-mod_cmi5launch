@@ -146,10 +146,14 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         $au = $getaus($auid);
                         if ($au && isset($au->title)) {
                             // Determine activity status
+                            // Note: satisfied and inprogress can be strings ("true"/"false") or integers (1/0)
                             $status = 'notstarted';
-                            if (!empty($au->satisfied) && $au->satisfied == 1) {
+                            if (!empty($au->satisfied) && ($au->satisfied === "true" || $au->satisfied === 1 || $au->satisfied === true)) {
                                 $status = 'completed';
-                            } else if (!empty($au->inprogress) && $au->inprogress == 1) {
+                            } else if (!empty($au->inprogress) && ($au->inprogress === "true" || $au->inprogress === 1 || $au->inprogress === true)) {
+                                $status = 'inprogress';
+                            } else if (isset($au->noattempt) && ($au->noattempt === "false" || $au->noattempt === 0 || $au->noattempt === false)) {
+                                // If noattempt is false, they've attempted it (in progress)
                                 $status = 'inprogress';
                             }
 
@@ -281,7 +285,6 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
             array('id' => 'activities-' . $coursemodule->id, 'style' => 'display: none;'));
 
         foreach ($activities as $activity) {
-            $launchUrl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
             $needsinit = isset($activity['needsinit']) && $activity['needsinit'] ? 'true' : 'false';
             $status = $activity['status'] ?? 'notstarted';
 
@@ -300,14 +303,15 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
             }
 
             $customhtml .= html_writer::start_div('cmi5-activity-item ' . $statusClass);
-            $customhtml .= html_writer::link(
-                $launchUrl,
+            // Use href="#" with onclick that prevents default
+            $customhtml .= html_writer::tag('a',
                 html_writer::span($statusIcon, 'activity-status-icon') .
                 html_writer::span($activity['title'], 'activity-title') .
                 html_writer::span($statusText, 'activity-status-badge'),
                 array(
+                    'href' => '#',
                     'class' => 'cmi5-activity-launch',
-                    'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ', ' . $needsinit . ');',
+                    'onclick' => 'launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ', ' . $needsinit . '); return false;',
                     'data-auid' => $activity['id'],
                     'data-auindex' => $activity['index'],
                     'title' => $statusText
