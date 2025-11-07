@@ -159,12 +159,28 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     $title = '';
                     if (is_object($audata)) {
                         if (isset($audata->title)) {
-                            $title = $audata->title;
+                            // Title can be an array of objects with 'text' property
+                            if (is_array($audata->title) && count($audata->title) > 0) {
+                                // Structure: title: [{ text: "Activity Name" }]
+                                $titleobj = $audata->title[0];
+                                if (is_object($titleobj) && isset($titleobj->text)) {
+                                    $title = $titleobj->text;
+                                } else if (is_array($titleobj) && isset($titleobj['text'])) {
+                                    $title = $titleobj['text'];
+                                } else {
+                                    $title = $audata->title[0];
+                                }
+                            } else if (is_string($audata->title)) {
+                                $title = $audata->title;
+                            }
                         } else if (isset($audata->activityName)) {
                             $title = $audata->activityName;
                         } else if (isset($audata->name)) {
                             $title = $audata->name;
-                        } else {
+                        }
+
+                        // Fallback to numbered activity
+                        if (empty($title)) {
                             $title = 'Activity ' . ($index + 1);
                         }
                     } else if (is_string($audata)) {
