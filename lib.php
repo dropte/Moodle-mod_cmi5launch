@@ -188,6 +188,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
             if ($ausdata && is_array($ausdata)) {
                 error_log('CMI5: Processing ' . count($ausdata) . ' AUs from manifest');
                 foreach ($ausdata as $index => $audata) {
+                    error_log('CMI5: AU[' . $index . '] structure: ' . json_encode($audata));
+
                     $title = '';
 
                     // Try to extract title from various possible structures
@@ -243,6 +245,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
             if ($ausdata && is_array($ausdata)) {
                 error_log('CMI5: Processing ' . count($ausdata) . ' AUs from manifest');
                 foreach ($ausdata as $index => $audata) {
+                    error_log('CMI5: AU[' . $index . '] structure: ' . json_encode($audata));
+
                     $title = '';
 
                     // Try to extract title from various possible structures
