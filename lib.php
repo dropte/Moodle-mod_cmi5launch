@@ -206,6 +206,12 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
     } else {
         $debuginfo .= ', usercourse=notfound';
     }
+    // Check manifest AUs
+    $debuginfo .= ', manifest_aus=' . (!empty($cmi5launch->aus) ? 'yes' : 'no');
+    if (!empty($cmi5launch->aus)) {
+        $manifest_aus = json_decode($cmi5launch->aus);
+        $debuginfo .= ', manifest_count=' . (is_array($manifest_aus) ? count($manifest_aus) : '0');
+    }
     $customhtml .= '<!-- CMI5 Debug: ' . $debuginfo . ' -->';
 
     // Add accordion toggle button
