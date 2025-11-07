@@ -227,6 +227,14 @@ $record = $DB->get_record('cmi5launch', array('id' => $cmi5launch->id));
 // Retrieve user's course record.
 $userscourse = $DB->get_record('cmi5launch_usercourse', ['courseid'  => $record->courseid, 'userid'  => $USER->id]);
 
+// Check if user course exists - if not, redirect to view.php to reinitialize
+if (!$userscourse) {
+    // User's registration was likely reset - redirect to view.php for reinitialization
+    $viewurl = new \moodle_url('/mod/cmi5launch/view.php', array('id' => $cm->id));
+    redirect($viewurl, get_string('reinitializing', 'cmi5launch'), 2, \core\output\notification::NOTIFY_INFO);
+    exit;
+}
+
 // To hold launch url.
 $location = "";
 
