@@ -314,22 +314,84 @@ if (!is_null($au->sessions)) {
                $progressData = json_decode($session->progress);
                $progressContent = "<div class='progress-details'>";
 
-               // Format the progress data in a more readable way
+               // Parse and format the progress data in a user-friendly way
                if (!empty($progressData)) {
-                   $progressContent .= "<ul class='progress-list'>";
+                   // Map of xAPI verbs to user-friendly descriptions
+                   $verbMap = array(
+                       'completed' => 'Completed activity',
+                       'passed' => 'Passed',
+                       'failed' => 'Failed',
+                       'initialized' => 'Started',
+                       'launched' => 'Launched',
+                       'terminated' => 'Finished session',
+                       'progressed' => 'Made progress',
+                       'auComplete' => 'Finished all content',
+                       'slideCompleted' => 'Completed slide',
+                       'SlideViewed' => 'Viewed slide',
+                       'slideEvent' => 'Interacted with slide',
+                       'satisfied' => 'Met requirements'
+                   );
+
+                   $importantEvents = array();
+                   $detailEvents = array();
+
                    foreach ($progressData as $item) {
-                       // Clean up the item for display
-                       $cleanItem = htmlspecialchars($item);
-                       // Add icon based on content
-                       if (stripos($item, 'completed') !== false || stripos($item, 'passed') !== false) {
-                           $progressContent .= "<li class='progress-success'>✓ " . $cleanItem . "</li>";
-                       } else if (stripos($item, 'failed') !== false || stripos($item, 'error') !== false) {
-                           $progressContent .= "<li class='progress-error'>✗ " . $cleanItem . "</li>";
+                       // Parse the progress item - typically format: "username verb URL on timestamp"
+                       // Extract verb and timestamp
+                       $parts = explode(' ', $item);
+                       $verb = '';
+                       $timestamp = '';
+
+                       // Find the verb (usually the second word after username)
+                       if (count($parts) >= 2) {
+                           $verb = $parts[1];
+                       }
+
+                       // Extract timestamp (after "on")
+                       $onPos = strpos($item, ' on ');
+                       if ($onPos !== false) {
+                           $timestamp = substr($item, $onPos + 4);
+                       }
+
+                       // Get friendly description
+                       $description = isset($verbMap[strtolower($verb)]) ? $verbMap[strtolower($verb)] : ucfirst($verb);
+
+                       // Categorize events
+                       $isImportant = in_array(strtolower($verb), array('completed', 'passed', 'failed', 'aucomplete', 'satisfied'));
+
+                       if ($isImportant) {
+                           $importantEvents[] = array('desc' => $description, 'time' => $timestamp, 'verb' => strtolower($verb));
                        } else {
-                           $progressContent .= "<li class='progress-info'>• " . $cleanItem . "</li>";
+                           $detailEvents[] = array('desc' => $description, 'time' => $timestamp, 'verb' => strtolower($verb));
                        }
                    }
-                   $progressContent .= "</ul>";
+
+                   // Display important events first
+                   if (!empty($importantEvents) || !empty($detailEvents)) {
+                       $progressContent .= "<ul class='progress-list'>";
+
+                       foreach ($importantEvents as $event) {
+                           $icon = in_array($event['verb'], array('completed', 'passed', 'aucomplete', 'satisfied')) ? '✓' : '✗';
+                           $class = in_array($event['verb'], array('completed', 'passed', 'aucomplete', 'satisfied')) ? 'progress-success' : 'progress-error';
+                           $progressContent .= "<li class='{$class}'>{$icon} {$event['desc']}</li>";
+                       }
+
+                       // Show first 3 detail events
+                       $count = 0;
+                       foreach ($detailEvents as $event) {
+                           if ($count++ >= 3) break;
+                           $progressContent .= "<li class='progress-info'>• {$event['desc']}</li>";
+                       }
+
+                       if (count($detailEvents) > 3) {
+                           $remaining = count($detailEvents) - 3;
+                           $progressContent .= "<li class='text-muted' style='border: none; background: none; font-size: 12px;'>+ {$remaining} more activities</li>";
+                       }
+
+                       $progressContent .= "</ul>";
+                   } else {
+                       $progressContent .= "<p class='text-muted'>No detailed progress information available.</p>";
+                   }
                } else {
                    $progressContent .= "<p class='text-muted'>No detailed progress information available.</p>";
                }

@@ -19,27 +19,30 @@
 
 .cmi5launch-table {
     width: 100%;
-    max-width: 100%;            /* Ensures the table doesn’t exceed screen width */
+    max-width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin: 1em 0;
-    font-size: 18px;
-    border-radius: 10px;
+    margin: 1.5em 0;
+    font-size: 15px;
+    border-radius: 8px;
     table-layout: fixed;
     overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    background: white;
 }
 
 /* Caption styling */
 .cmi5launch-table caption {
-    font-size: 20px;           /* Moderate font size */
-    font-weight: 600;          /* Semi-bold */
-    color: #333;               /* Dark color for readability */
-    padding: 12px 10px;        /* Add padding for spacing */
-    text-align: left;          /* Left-align the caption */
-    text-transform: none;      /* Normal case, not shouty */
-    background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
-    border-bottom: 2px solid #4a90e2;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    padding: 16px 20px;
+    text-align: left;
+    text-transform: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 }
 
 .cmi5launch-table tr {
@@ -63,31 +66,36 @@
 
 /* Header styling */
 .cmi5launch-table th {
-    background-color: #4a90e2;
-    color: #fff;
-    font-weight: bold;
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
     text-transform: uppercase;
-    font-size: 16px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e9ecef;
 }
 
 /* Row styling */
-.cmi5launch-table tr:nth-child(even) {
-    background-color: #f9f9f9; /* Light gray for even rows */
+.cmi5launch-table tbody tr {
+    transition: all 0.2s ease;
 }
 
-.cmi5launch-table tr:hover {
-    background-color: #eaf4ff; /* Light blue on hover for all rows */
+.cmi5launch-table tbody tr:hover {
+    background-color: #f1f3f5;
+    transform: scale(1.01);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Specific cell styling */
 .cmi5launch-table .date-cell {
-    font-style: italic;
-    color: #555;
+    color: #6c757d;
+    font-size: 14px;
 }
 
 .cmi5launch-table .score-cell {
-    font-weight: bold;
-    color: #333;
+    font-weight: 600;
+    color: #28a745;
+    font-size: 16px;
 }
 
 /* Column width customization */
@@ -124,8 +132,8 @@
 
 /* Progress details formatting */
 .progress-details {
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 13px;
+    line-height: 1.8;
 }
 
 .progress-list {
@@ -135,24 +143,29 @@
 }
 
 .progress-list li {
-    padding: 6px 0;
-    border-bottom: 1px solid #e9ecef;
+    padding: 8px 12px;
+    margin: 4px 0;
+    border-radius: 4px;
+    background: #f8f9fa;
+    transition: all 0.2s ease;
 }
 
-.progress-list li:last-child {
-    border-bottom: none;
+.progress-list li:hover {
+    background: #e9ecef;
 }
 
 .progress-success {
     color: #28a745;
+    font-weight: 500;
 }
 
 .progress-error {
     color: #dc3545;
+    font-weight: 500;
 }
 
 .progress-info {
-    color: #555;
+    color: #6c757d;
 }
 
 .text-muted {
