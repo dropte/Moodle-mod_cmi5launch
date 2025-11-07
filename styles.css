@@ -797,3 +797,95 @@
         display: none;
     }
 }
+
+/* Course page card styling for CMI5 activities */
+.cmi5launch-course-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.cmi5launch-course-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+}
+
+.cmi5launch-course-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.35);
+}
+
+.cmi5launch-card-content {
+    position: relative;
+    z-index: 1;
+}
+
+.cmi5launch-card-intro {
+    color: white;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    opacity: 0.95;
+}
+
+.cmi5launch-card-intro p:last-child {
+    margin-bottom: 0;
+}
+
+.cmi5launch-card-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.cmi5-course-launch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: white;
+    color: #667eea;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border: none;
+    text-transform: none;
+}
+
+.cmi5-course-launch-btn:hover {
+    background: #f8f9ff;
+    color: #764ba2;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+}
+
+.cmi5-course-launch-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.cmi5-launch-icon {
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cmi5-launch-text {
+    font-weight: 700;
+}

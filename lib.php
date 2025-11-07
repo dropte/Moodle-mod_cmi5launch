@@ -93,6 +93,54 @@ function cmi5launch_supports($feature) {
 }
 
 /**
+ * Return information for displaying on the course page
+ *
+ * @param stdClass $coursemodule
+ * @return cached_cm_info|null
+ */
+function cmi5launch_get_coursemodule_info($coursemodule) {
+    global $DB;
+
+    $cmi5launch = $DB->get_record('cmi5launch', array('id' => $coursemodule->instance), '*', MUST_EXIST);
+
+    $info = new cached_cm_info();
+    $info->name = $cmi5launch->name;
+
+    if ($coursemodule->showdescription) {
+        // Convert intro to HTML and trim it
+        $info->content = format_module_intro('cmi5launch', $cmi5launch, $coursemodule->id, false);
+    }
+
+    // Add custom HTML for a styled launch button
+    $viewurl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
+
+    $customhtml = html_writer::start_div('cmi5launch-course-card');
+    $customhtml .= html_writer::start_div('cmi5launch-card-content');
+
+    // Add the intro/description if available
+    if (!empty($cmi5launch->intro)) {
+        $customhtml .= html_writer::div(format_text($cmi5launch->intro, $cmi5launch->introformat), 'cmi5launch-card-intro');
+    }
+
+    // Add a styled launch button
+    $customhtml .= html_writer::start_div('cmi5launch-card-actions');
+    $customhtml .= html_writer::link(
+        $viewurl,
+        html_writer::span('▶', 'cmi5-launch-icon') . html_writer::span('Begin Exercise', 'cmi5-launch-text'),
+        array('class' => 'btn cmi5-course-launch-btn', 'title' => 'Launch ' . $cmi5launch->name)
+    );
+    $customhtml .= html_writer::end_div(); // cmi5launch-card-actions
+
+    $customhtml .= html_writer::end_div(); // cmi5launch-card-content
+    $customhtml .= html_writer::end_div(); // cmi5launch-course-card
+
+    $info->content = $customhtml;
+    $info->customdata = (object)['customicon' => true];
+
+    return $info;
+}
+
+/**
  * Saves a new instance of the cmi5launch into the database
  *
  * Given an object containing all the necessary data,
