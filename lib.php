@@ -153,8 +153,11 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
         } else if ($userscourse && !empty($cmi5launch->aus)) {
             // User has a record but AUs not saved yet - show from manifest
             // Parse AU data directly from the CMI5 launch record as preview
+            error_log('CMI5: Entering fallback block');
             $ausdata = json_decode($cmi5launch->aus);
+            error_log('CMI5: ausdata type=' . gettype($ausdata) . ', is_array=' . (is_array($ausdata) ? 'yes' : 'no'));
             if ($ausdata && is_array($ausdata)) {
+                error_log('CMI5: Processing ' . count($ausdata) . ' AUs from manifest');
                 foreach ($ausdata as $index => $audata) {
                     $title = '';
 
@@ -194,7 +197,11 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         'index' => $index,
                         'needsinit' => true
                     );
+                    error_log('CMI5: Added activity ' . $index . ': ' . $title);
                 }
+                error_log('CMI5: Total activities added: ' . count($activities));
+            } else {
+                error_log('CMI5: ausdata check failed - not array or empty');
             }
         }
         // For users who haven't started yet, we don't show the accordion
