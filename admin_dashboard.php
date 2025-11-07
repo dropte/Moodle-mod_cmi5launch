@@ -53,7 +53,6 @@ $PAGE->set_title(format_string($cmi5launch->name) . ' - Admin Dashboard');
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 $PAGE->requires->css('/mod/cmi5launch/styles.css');
-$PAGE->requires->js(new moodle_url('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'));
 
 // Handle actions
 if ($action === 'reset' && $userid > 0) {
@@ -500,7 +499,7 @@ if ($currenttab === 'overview') {
             echo html_writer::start_div('card-body');
             echo html_writer::tag('h5', '💡 Key Insight', array('class' => 'card-title'));
             $shortinsight = substr($progressinsight, 0, 300) . '...';
-            echo html_writer::tag('p', $shortinsight, array('class' => 'card-text'));
+            echo html_writer::div(format_text($shortinsight, FORMAT_MARKDOWN), 'card-text');
             echo html_writer::end_div();
             echo html_writer::end_div();
             echo html_writer::end_div();
@@ -512,7 +511,7 @@ if ($currenttab === 'overview') {
             echo html_writer::start_div('card-body');
             echo html_writer::tag('h5', '⚠️ Attention Needed', array('class' => 'card-title'));
             $shortrisk = substr($atriskinsight, 0, 300) . '...';
-            echo html_writer::tag('p', $shortrisk, array('class' => 'card-text'));
+            echo html_writer::div(format_text($shortrisk, FORMAT_MARKDOWN), 'card-text');
             echo html_writer::end_div();
             echo html_writer::end_div();
             echo html_writer::end_div();
@@ -584,19 +583,40 @@ if ($currenttab === 'overview') {
         }
     }
 
-    // JavaScript for charts
+    // Load Chart.js and initialize charts
     echo html_writer::start_tag('script');
     ?>
-    document.addEventListener('DOMContentLoaded', function() {
+    // Load Chart.js from CDN
+    (function() {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+        script.onload = function() {
+            // Ensure DOM is ready before initializing charts
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initCharts);
+            } else {
+                initCharts();
+            }
+        };
+        document.head.appendChild(script);
+    })();
+
+    function initCharts() {
+        console.log('Initializing charts...');
+        console.log('Chart.js version:', Chart.version);
+
         // Progress Distribution Pie Chart
         const progressCtx = document.getElementById('progressChart');
+        console.log('Progress chart canvas:', progressCtx);
         if (progressCtx) {
+            const progressData = [<?php echo $completedcount; ?>, <?php echo $inprogresscount; ?>, <?php echo $notstartedcount; ?>];
+            console.log('Progress chart data:', progressData);
             new Chart(progressCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Completed', 'In Progress', 'Not Started'],
                     datasets: [{
-                        data: [<?php echo $completedcount; ?>, <?php echo $inprogresscount; ?>, <?php echo $notstartedcount; ?>],
+                        data: progressData,
                         backgroundColor: ['#28a745', '#ffc107', '#6c757d'],
                         borderWidth: 2
                     }]
@@ -609,16 +629,22 @@ if ($currenttab === 'overview') {
                     }
                 }
             });
+            console.log('Progress chart created successfully');
+        } else {
+            console.error('Progress chart canvas not found');
         }
 
         // Completion Rate Gauge
         const gaugeCtx = document.getElementById('completionGauge');
+        console.log('Completion gauge canvas:', gaugeCtx);
         if (gaugeCtx) {
+            const completionData = [<?php echo $completionrate; ?>, <?php echo 100 - $completionrate; ?>];
+            console.log('Completion gauge data:', completionData);
             new Chart(gaugeCtx, {
                 type: 'doughnut',
                 data: {
                     datasets: [{
-                        data: [<?php echo $completionrate; ?>, <?php echo 100 - $completionrate; ?>],
+                        data: completionData,
                         backgroundColor: [
                             <?php echo $completionrate >= 70 ? "'#28a745'" : ($completionrate >= 40 ? "'#ffc107'" : "'#dc3545'"); ?>,
                             '#e9ecef'
@@ -652,24 +678,34 @@ if ($currenttab === 'overview') {
                     }
                 }]
             });
+            console.log('Completion gauge created successfully');
+        } else {
+            console.error('Completion gauge canvas not found');
         }
 
         // Activity Performance Bar Chart
         const activityCtx = document.getElementById('activityChart');
+        console.log('Activity chart canvas:', activityCtx);
         if (activityCtx) {
+            const activityLabels = <?php echo json_encode($activitylabels ?? []); ?>;
+            const activityStarted = <?php echo json_encode($activitystarted ?? []); ?>;
+            const activityCompleted = <?php echo json_encode($activitycompleted ?? []); ?>;
+            console.log('Activity chart labels:', activityLabels);
+            console.log('Activity chart started:', activityStarted);
+            console.log('Activity chart completed:', activityCompleted);
             new Chart(activityCtx, {
                 type: 'bar',
                 data: {
-                    labels: <?php echo json_encode($activitylabels ?? []); ?>,
+                    labels: activityLabels,
                     datasets: [
                         {
                             label: 'Started',
-                            data: <?php echo json_encode($activitystarted ?? []); ?>,
+                            data: activityStarted,
                             backgroundColor: '#007bff'
                         },
                         {
                             label: 'Completed',
-                            data: <?php echo json_encode($activitycompleted ?? []); ?>,
+                            data: activityCompleted,
                             backgroundColor: '#28a745'
                         }
                     ]
@@ -685,8 +721,11 @@ if ($currenttab === 'overview') {
                     }
                 }
             });
+            console.log('Activity chart created successfully');
+        } else {
+            console.error('Activity chart canvas not found');
         }
-    });
+    }
     <?php
     echo html_writer::end_tag('script');
 
