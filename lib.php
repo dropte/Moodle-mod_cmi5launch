@@ -155,20 +155,51 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
             $ausdata = json_decode($cmi5launch->aus);
             if ($ausdata && is_array($ausdata)) {
                 foreach ($ausdata as $index => $audata) {
-                    if (is_object($audata) && isset($audata->title)) {
+                    // Try different possible structures
+                    $title = '';
+                    if (is_object($audata)) {
+                        if (isset($audata->title)) {
+                            $title = $audata->title;
+                        } else if (isset($audata->activityName)) {
+                            $title = $audata->activityName;
+                        } else if (isset($audata->name)) {
+                            $title = $audata->name;
+                        } else {
+                            $title = 'Activity ' . ($index + 1);
+                        }
+                    } else if (is_string($audata)) {
+                        $title = $audata;
+                    } else {
+                        $title = 'Activity ' . ($index + 1);
+                    }
+
+                    if (!empty($title)) {
                         $activities[] = array(
                             'id' => 'preview_' . $index,
-                            'title' => $audata->title,
+                            'title' => $title,
                             'index' => $index,
                             'ispreview' => true
                         );
                     }
                 }
+            } else if ($ausdata && is_object($ausdata)) {
+                // Maybe it's a single object, not an array
+                $activities[] = array(
+                    'id' => 'preview_0',
+                    'title' => $ausdata->title ?? $ausdata->activityName ?? 'Activity',
+                    'index' => 0,
+                    'ispreview' => true
+                );
             }
         }
     } catch (Exception $e) {
         // No activities loaded - will show "Begin Exercise" button
+        // Log error for debugging
+        error_log('CMI5 coursemodule info error: ' . $e->getMessage());
     }
+
+    // Debug comment
+    $customhtml .= '<!-- CMI5 Debug: activities=' . count($activities) . ', has_aus=' . (!empty($cmi5launch->aus) ? 'yes' : 'no') . ' -->';
 
     // Add accordion toggle button
     $customhtml .= html_writer::start_div('cmi5launch-card-actions');
