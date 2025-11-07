@@ -130,7 +130,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
             array('courseid' => $cmi5launch->cmi5launchid, 'userid' => $USER->id));
 
         if ($userscourse && !empty($userscourse->aus)) {
-            // User has started - load actual AU IDs from database
+            // User has started and has AU IDs - load from database
             $userhasstarted = true;
             $auids = json_decode($userscourse->aus);
 
@@ -148,6 +148,39 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     } catch (Exception $e) {
                         continue;
                     }
+                }
+            }
+        } else if ($userscourse && !empty($cmi5launch->aus)) {
+            // User has a record but AUs not saved yet - show from manifest
+            // Parse AU data directly from the CMI5 launch record as preview
+            $ausdata = json_decode($cmi5launch->aus);
+            if ($ausdata && is_array($ausdata)) {
+                foreach ($ausdata as $index => $audata) {
+                    $title = '';
+                    if (is_object($audata) && isset($audata->title)) {
+                        // Title structure: title: [{ text: "Activity Name" }]
+                        if (is_array($audata->title) && count($audata->title) > 0) {
+                            $titleobj = $audata->title[0];
+                            if (is_object($titleobj) && isset($titleobj->text)) {
+                                $title = $titleobj->text;
+                            } else if (is_string($audata->title[0])) {
+                                $title = $audata->title[0];
+                            }
+                        } else if (is_string($audata->title)) {
+                            $title = $audata->title;
+                        }
+                    }
+
+                    if (empty($title)) {
+                        $title = 'Activity ' . ($index + 1);
+                    }
+
+                    $activities[] = array(
+                        'id' => 'init_' . $index,  // Special ID to indicate needs init
+                        'title' => $title,
+                        'index' => $index,
+                        'needsinit' => true
+                    );
                 }
             }
         }
@@ -207,6 +240,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
         foreach ($activities as $activity) {
             $launchUrl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
+            $needsinit = isset($activity['needsinit']) && $activity['needsinit'] ? 'true' : 'false';
 
             $customhtml .= html_writer::start_div('cmi5-activity-item');
             $customhtml .= html_writer::link(
@@ -215,7 +249,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 html_writer::span($activity['title'], 'activity-title'),
                 array(
                     'class' => 'cmi5-activity-launch',
-                    'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ');',
+                    'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ', ' . $needsinit . ');',
                     'data-auid' => $activity['id'],
                     'data-auindex' => $activity['index']
                 )
@@ -251,9 +285,13 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
                 };
 
-                window.launchCMI5Activity = function(cmid, auid, auindex) {
-                    // Auto-launch the specific AU in modal player
-                    var url = '/mod/cmi5launch/view.php?id=' + cmid + '&launch=' + auid + '&auindex=' + auindex;
+                window.launchCMI5Activity = function(cmid, auid, auindex, needsinit) {
+                    // If needs init, just go to view.php to initialize AUs
+                    // Otherwise auto-launch the specific AU in modal player
+                    var url = '/mod/cmi5launch/view.php?id=' + cmid;
+                    if (!needsinit) {
+                        url += '&launch=' + auid + '&auindex=' + auindex;
+                    }
                     window.location.href = url;
                     return false;
                 };
