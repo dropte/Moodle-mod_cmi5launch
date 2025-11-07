@@ -28,7 +28,6 @@ use mod_cmi5launch\local\progress;
 
 require_once(dirname(dirname(dirname(__FILE__))) . '/config.php');
 require('header.php');
-require_once($CFG->dirroot . '/lib/outputcomponents.php');
 require_once($CFG->dirroot . '/mod/cmi5launch/classes/local/errorover.php');
 
 require_login($course, false, $cm);
