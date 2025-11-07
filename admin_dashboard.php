@@ -30,6 +30,7 @@
 
 require_once(dirname(dirname(dirname(__FILE__))).'/config.php');
 require_once(dirname(__FILE__).'/lib.php');
+require_once($CFG->libdir.'/completionlib.php');
 
 use mod_cmi5launch\local\progress;
 use mod_cmi5launch\local\cmi5_connectors;
@@ -73,6 +74,21 @@ if ($action === 'reset' && $userid > 0) {
         ));
         $DB->delete_records('cmi5launch_sessions', array(
             'moodlecourseid' => $cm->instance,
+            'userid' => $userid
+        ));
+
+        // Reset Moodle's activity completion tracking
+        $completion = new completion_info($course);
+        if ($completion->is_enabled($cm)) {
+            $completion->update_state($cm, COMPLETION_INCOMPLETE, $userid);
+        }
+
+        // Reset grade
+        cmi5launch_grade_item_update($cmi5launch, (object)array('userid' => $userid, 'rawgrade' => null));
+
+        // Clear viewed/completion cache
+        $DB->delete_records('course_modules_completion', array(
+            'coursemoduleid' => $cm->id,
             'userid' => $userid
         ));
 
