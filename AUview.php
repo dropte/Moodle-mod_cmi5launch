@@ -141,6 +141,12 @@ $auterm = cmi5launch_get_term('au', false);
             }, 500);
         }
 
+        var playerState = {
+            isMaximized: false,
+            isMinimized: false,
+            lastPosition: { width: '80%', height: '80%', top: '10%', left: '10%' }
+        };
+
         function openPlayerModal(url) {
             // Create modal if it doesn't exist
             if (!document.getElementById('cmi5-player-modal')) {
@@ -148,17 +154,38 @@ $auterm = cmi5launch_get_term('au', false);
                 modal.id = 'cmi5-player-modal';
                 modal.className = 'cmi5-modal';
                 modal.innerHTML = `
-                    <div class="cmi5-modal-content">
-                        <div class="cmi5-modal-header">
-                            <h3>Activity Player</h3>
-                            <button class="cmi5-modal-close" onclick="closePlayerModal()">&times;</button>
+                    <div class="cmi5-modal-content cmi5-window" id="cmi5-window">
+                        <div class="cmi5-modal-header" id="cmi5-window-header">
+                            <div class="window-controls-left">
+                                <span class="window-drag-icon">⋮⋮</span>
+                                <h3>Activity Player</h3>
+                            </div>
+                            <div class="window-controls-right">
+                                <button class="window-control-btn" onclick="minimizePlayer()" title="Minimize">−</button>
+                                <button class="window-control-btn" onclick="toggleMaximize()" title="Maximize/Restore">□</button>
+                                <button class="window-control-btn" onclick="popOutPlayer()" title="Pop Out to New Window">⧉</button>
+                                <button class="cmi5-modal-close" onclick="closePlayerModal()" title="Close">&times;</button>
+                            </div>
                         </div>
                         <div class="cmi5-modal-body">
                             <iframe id="cmi5-player-iframe" src="" frameborder="0" allowfullscreen></iframe>
                         </div>
+                        <div class="resize-handle resize-handle-br"></div>
+                        <div class="resize-handle resize-handle-bl"></div>
+                        <div class="resize-handle resize-handle-tr"></div>
+                        <div class="resize-handle resize-handle-tl"></div>
+                        <div class="resize-handle resize-handle-r"></div>
+                        <div class="resize-handle resize-handle-l"></div>
+                        <div class="resize-handle resize-handle-t"></div>
+                        <div class="resize-handle resize-handle-b"></div>
                     </div>
                 `;
                 document.body.appendChild(modal);
+
+                // Make window draggable
+                makeWindowDraggable();
+                // Make window resizable
+                makeWindowResizable();
             }
 
             // Set iframe source and show modal
@@ -166,8 +193,20 @@ $auterm = cmi5launch_get_term('au', false);
             iframe.src = url;
 
             const modal = document.getElementById('cmi5-player-modal');
+            const windowEl = document.getElementById('cmi5-window');
+
+            // Reset to default size if not maximized
+            if (!playerState.isMaximized) {
+                windowEl.style.width = '80%';
+                windowEl.style.height = '80%';
+                windowEl.style.top = '10%';
+                windowEl.style.left = '10%';
+                windowEl.style.transform = 'none';
+            }
+
             modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            windowEl.style.display = 'flex';
+            playerState.isMinimized = false;
         }
 
         function closePlayerModal() {
@@ -177,11 +216,176 @@ $auterm = cmi5launch_get_term('au', false);
             if (modal) {
                 modal.style.display = 'none';
                 iframe.src = ''; // Clear iframe to stop any running content
-                document.body.style.overflow = ''; // Restore scrolling
 
                 // Refresh progress after closing
                 showNotification('Checking progress...', 'info');
                 checkProgress();
+            }
+        }
+
+        function minimizePlayer() {
+            const windowEl = document.getElementById('cmi5-window');
+            if (playerState.isMinimized) {
+                // Restore
+                windowEl.style.display = 'flex';
+                playerState.isMinimized = false;
+            } else {
+                // Minimize
+                windowEl.style.display = 'none';
+                playerState.isMinimized = true;
+                showNotification('Player minimized. Click to restore.', 'info');
+            }
+        }
+
+        function toggleMaximize() {
+            const windowEl = document.getElementById('cmi5-window');
+
+            if (playerState.isMaximized) {
+                // Restore to previous size
+                windowEl.style.width = playerState.lastPosition.width;
+                windowEl.style.height = playerState.lastPosition.height;
+                windowEl.style.top = playerState.lastPosition.top;
+                windowEl.style.left = playerState.lastPosition.left;
+                windowEl.classList.remove('maximized');
+                playerState.isMaximized = false;
+            } else {
+                // Save current position
+                playerState.lastPosition = {
+                    width: windowEl.style.width,
+                    height: windowEl.style.height,
+                    top: windowEl.style.top,
+                    left: windowEl.style.left
+                };
+                // Maximize
+                windowEl.style.width = '100%';
+                windowEl.style.height = '100%';
+                windowEl.style.top = '0';
+                windowEl.style.left = '0';
+                windowEl.classList.add('maximized');
+                playerState.isMaximized = true;
+            }
+        }
+
+        function popOutPlayer() {
+            const iframe = document.getElementById('cmi5-player-iframe');
+            const url = iframe.src;
+
+            if (url) {
+                // Open in new window
+                window.open(url, 'CMI5Player', 'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
+                // Close modal
+                closePlayerModal();
+            }
+        }
+
+        function makeWindowDraggable() {
+            const windowEl = document.getElementById('cmi5-window');
+            const header = document.getElementById('cmi5-window-header');
+            let isDragging = false;
+            let currentX, currentY, initialX, initialY;
+
+            header.addEventListener('mousedown', dragStart);
+
+            function dragStart(e) {
+                // Don't drag if clicking on buttons
+                if (e.target.tagName === 'BUTTON') return;
+
+                isDragging = true;
+                initialX = e.clientX - (parseFloat(windowEl.style.left) || 0);
+                initialY = e.clientY - (parseFloat(windowEl.style.top) || 0);
+
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', dragEnd);
+                header.style.cursor = 'grabbing';
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+
+                windowEl.style.left = currentX + 'px';
+                windowEl.style.top = currentY + 'px';
+            }
+
+            function dragEnd() {
+                isDragging = false;
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', dragEnd);
+                header.style.cursor = 'grab';
+            }
+        }
+
+        function makeWindowResizable() {
+            const windowEl = document.getElementById('cmi5-window');
+            const handles = document.querySelectorAll('.resize-handle');
+
+            handles.forEach(handle => {
+                handle.addEventListener('mousedown', initResize);
+            });
+
+            let isResizing = false;
+            let currentHandle = null;
+            let startX, startY, startWidth, startHeight, startLeft, startTop;
+
+            function initResize(e) {
+                isResizing = true;
+                currentHandle = e.target;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = windowEl.getBoundingClientRect();
+                startWidth = rect.width;
+                startHeight = rect.height;
+                startLeft = rect.left;
+                startTop = rect.top;
+
+                document.addEventListener('mousemove', resize);
+                document.addEventListener('mouseup', stopResize);
+                e.preventDefault();
+            }
+
+            function resize(e) {
+                if (!isResizing) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                if (currentHandle.classList.contains('resize-handle-r')) {
+                    windowEl.style.width = (startWidth + dx) + 'px';
+                } else if (currentHandle.classList.contains('resize-handle-l')) {
+                    windowEl.style.width = (startWidth - dx) + 'px';
+                    windowEl.style.left = (startLeft + dx) + 'px';
+                } else if (currentHandle.classList.contains('resize-handle-b')) {
+                    windowEl.style.height = (startHeight + dy) + 'px';
+                } else if (currentHandle.classList.contains('resize-handle-t')) {
+                    windowEl.style.height = (startHeight - dy) + 'px';
+                    windowEl.style.top = (startTop + dy) + 'px';
+                } else if (currentHandle.classList.contains('resize-handle-br')) {
+                    windowEl.style.width = (startWidth + dx) + 'px';
+                    windowEl.style.height = (startHeight + dy) + 'px';
+                } else if (currentHandle.classList.contains('resize-handle-bl')) {
+                    windowEl.style.width = (startWidth - dx) + 'px';
+                    windowEl.style.height = (startHeight + dy) + 'px';
+                    windowEl.style.left = (startLeft + dx) + 'px';
+                } else if (currentHandle.classList.contains('resize-handle-tr')) {
+                    windowEl.style.width = (startWidth + dx) + 'px';
+                    windowEl.style.height = (startHeight - dy) + 'px';
+                    windowEl.style.top = (startTop + dy) + 'px';
+                } else if (currentHandle.classList.contains('resize-handle-tl')) {
+                    windowEl.style.width = (startWidth - dx) + 'px';
+                    windowEl.style.height = (startHeight - dy) + 'px';
+                    windowEl.style.left = (startLeft + dx) + 'px';
+                    windowEl.style.top = (startTop + dy) + 'px';
+                }
+            }
+
+            function stopResize() {
+                isResizing = false;
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
             }
         }
 
@@ -192,11 +396,11 @@ $auterm = cmi5launch_get_term('au', false);
             }
         });
 
-        // Close modal when clicking outside
+        // Restore minimized window when clicking backdrop
         window.addEventListener('click', function(e) {
             const modal = document.getElementById('cmi5-player-modal');
-            if (e.target === modal) {
-                closePlayerModal();
+            if (e.target === modal && playerState.isMinimized) {
+                minimizePlayer(); // Restore
             }
         });
 
