@@ -129,7 +129,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
         // Check if user has started (has a user course record with AU IDs)
         $userscourse = $DB->get_record('cmi5launch_usercourse',
-            array('courseid' => $cmi5launch->cmi5launchid, 'userid' => $USER->id));
+            array('courseid' => $cmi5launch->courseid, 'userid' => $USER->id));
 
         error_log('CMI5: userscourse=' . ($userscourse ? 'found' : 'notfound') .
                   ', userscourse_aus=' . ($userscourse && !empty($userscourse->aus) ? 'yes' : 'no') .
