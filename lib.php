@@ -375,27 +375,40 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
                     console.log('Loading in modal:', url);
 
-                    // Show modal and load iframe
+                    // Show modal and loading spinner
                     var modal = document.getElementById('cmi5-course-modal-' + cmid);
                     var iframe = document.getElementById('cmi5-course-iframe-' + cmid);
+                    var loading = document.getElementById('cmi5-course-loading-' + cmid);
 
-                    if (modal && iframe) {
-                        iframe.src = url;
+                    if (modal && iframe && loading) {
+                        loading.style.display = 'flex'; // Show loading spinner
                         modal.style.display = 'block';
                         document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                        iframe.src = url; // Start loading iframe
                     }
 
                     return false;
                 };
 
+                window.hideCMI5Loading = function(cmid) {
+                    var loading = document.getElementById('cmi5-course-loading-' + cmid);
+                    if (loading) {
+                        loading.style.display = 'none';
+                    }
+                };
+
                 window.closeCMI5CourseModal = function(cmid) {
                     var modal = document.getElementById('cmi5-course-modal-' + cmid);
                     var iframe = document.getElementById('cmi5-course-iframe-' + cmid);
+                    var loading = document.getElementById('cmi5-course-loading-' + cmid);
 
                     if (modal && iframe) {
                         modal.style.display = 'none';
                         iframe.src = ''; // Clear iframe to stop activity
                         document.body.style.overflow = ''; // Restore scrolling
+                        if (loading) {
+                            loading.style.display = 'flex'; // Reset loading for next time
+                        }
                     }
                 };
             }
@@ -413,11 +426,17 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
         'onclick' => 'closeCMI5CourseModal(' . $coursemodule->id . ')',
         'title' => 'Close'
     ));
+    // Loading spinner
+    $customhtml .= html_writer::start_div('cmi5-course-loading', array('id' => 'cmi5-course-loading-' . $coursemodule->id));
+    $customhtml .= html_writer::div('', 'cmi5-course-spinner');
+    $customhtml .= html_writer::div('Loading activity...', 'cmi5-course-loading-text');
+    $customhtml .= html_writer::end_div(); // cmi5-course-loading
     $customhtml .= html_writer::tag('iframe', '', array(
         'id' => 'cmi5-course-iframe-' . $coursemodule->id,
         'src' => '',
         'frameborder' => '0',
-        'allowfullscreen' => 'true'
+        'allowfullscreen' => 'true',
+        'onload' => 'hideCMI5Loading(' . $coursemodule->id . ')'
     ));
     $customhtml .= html_writer::end_div(); // cmi5-course-modal-content
     $customhtml .= html_writer::end_div(); // cmi5-course-modal
