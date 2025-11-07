@@ -150,64 +150,10 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
                 }
             }
-        } else if (!empty($cmi5launch->aus)) {
-            // User hasn't started - parse AU data from manifest for preview
-            $ausdata = json_decode($cmi5launch->aus);
-            if ($ausdata && is_array($ausdata)) {
-                foreach ($ausdata as $index => $audata) {
-                    // Try different possible structures
-                    $title = '';
-                    if (is_object($audata)) {
-                        if (isset($audata->title)) {
-                            // Title can be an array of objects with 'text' property
-                            if (is_array($audata->title) && count($audata->title) > 0) {
-                                // Structure: title: [{ text: "Activity Name" }]
-                                $titleobj = $audata->title[0];
-                                if (is_object($titleobj) && isset($titleobj->text)) {
-                                    $title = $titleobj->text;
-                                } else if (is_array($titleobj) && isset($titleobj['text'])) {
-                                    $title = $titleobj['text'];
-                                } else {
-                                    $title = $audata->title[0];
-                                }
-                            } else if (is_string($audata->title)) {
-                                $title = $audata->title;
-                            }
-                        } else if (isset($audata->activityName)) {
-                            $title = $audata->activityName;
-                        } else if (isset($audata->name)) {
-                            $title = $audata->name;
-                        }
-
-                        // Fallback to numbered activity
-                        if (empty($title)) {
-                            $title = 'Activity ' . ($index + 1);
-                        }
-                    } else if (is_string($audata)) {
-                        $title = $audata;
-                    } else {
-                        $title = 'Activity ' . ($index + 1);
-                    }
-
-                    if (!empty($title)) {
-                        $activities[] = array(
-                            'id' => 'preview_' . $index,
-                            'title' => $title,
-                            'index' => $index,
-                            'ispreview' => true
-                        );
-                    }
-                }
-            } else if ($ausdata && is_object($ausdata)) {
-                // Maybe it's a single object, not an array
-                $activities[] = array(
-                    'id' => 'preview_0',
-                    'title' => $ausdata->title ?? $ausdata->activityName ?? 'Activity',
-                    'index' => 0,
-                    'ispreview' => true
-                );
-            }
         }
+        // For users who haven't started yet, we don't show the accordion
+        // They'll see "Begin Exercise" button instead which takes them to view.php
+        // Once they've started, they'll see this accordion on return visits
     } catch (Exception $e) {
         // No activities loaded - will show "Begin Exercise" button
         // Log error for debugging
@@ -249,7 +195,6 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
 
         foreach ($activities as $activity) {
             $launchUrl = new moodle_url('/mod/cmi5launch/view.php', array('id' => $coursemodule->id));
-            $ispreview = isset($activity['ispreview']) && $activity['ispreview'] ? 'true' : 'false';
 
             $customhtml .= html_writer::start_div('cmi5-activity-item');
             $customhtml .= html_writer::link(
@@ -258,10 +203,9 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 html_writer::span($activity['title'], 'activity-title'),
                 array(
                     'class' => 'cmi5-activity-launch',
-                    'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ', ' . $ispreview . ');',
+                    'onclick' => 'return launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ');',
                     'data-auid' => $activity['id'],
-                    'data-auindex' => $activity['index'],
-                    'data-ispreview' => $ispreview
+                    'data-auindex' => $activity['index']
                 )
             );
             $customhtml .= html_writer::end_div();
@@ -295,13 +239,9 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
                 };
 
-                window.launchCMI5Activity = function(cmid, auid, auindex, ispreview) {
-                    // If preview (user hasn't started), just go to view.php to initialize
-                    // If not preview (user has started), auto-launch the specific AU
-                    var url = '/mod/cmi5launch/view.php?id=' + cmid;
-                    if (!ispreview) {
-                        url += '&launch=' + auid + '&auindex=' + auindex;
-                    }
+                window.launchCMI5Activity = function(cmid, auid, auindex) {
+                    // Auto-launch the specific AU in modal player
+                    var url = '/mod/cmi5launch/view.php?id=' + cmid + '&launch=' + auid + '&auindex=' + auindex;
                     window.location.href = url;
                     return false;
                 };
