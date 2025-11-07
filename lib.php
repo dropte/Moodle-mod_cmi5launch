@@ -147,6 +147,13 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         if ($au && isset($au->title)) {
                             // Determine activity status
                             // Note: satisfied and inprogress can be strings ("true"/"false") or integers (1/0)
+
+                            // DEBUG: Log actual values
+                            error_log("CMI5 Status Debug for AU {$auid}: satisfied=" .
+                                var_export($au->satisfied ?? 'NOTSET', true) .
+                                ", inprogress=" . var_export($au->inprogress ?? 'NOTSET', true) .
+                                ", noattempt=" . var_export($au->noattempt ?? 'NOTSET', true));
+
                             $status = 'notstarted';
                             if (!empty($au->satisfied) && ($au->satisfied === "true" || $au->satisfied === 1 || $au->satisfied === true)) {
                                 $status = 'completed';
@@ -156,6 +163,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                                 // If noattempt is false, they've attempted it (in progress)
                                 $status = 'inprogress';
                             }
+
+                            error_log("CMI5 Status Debug: Final status = {$status}");
 
                             $activities[] = array(
                                 'id' => $auid,
@@ -311,7 +320,7 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                 array(
                     'href' => '#',
                     'class' => 'cmi5-activity-launch',
-                    'onclick' => 'launchCMI5Activity(' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ', ' . $needsinit . '); return false;',
+                    'onclick' => 'return launchCMI5Activity(event, ' . $coursemodule->id . ', "' . $activity['id'] . '", ' . $activity['index'] . ', ' . $needsinit . ');',
                     'data-auid' => $activity['id'],
                     'data-auindex' => $activity['index'],
                     'title' => $statusText
@@ -348,7 +357,15 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
                 };
 
-                window.launchCMI5Activity = function(cmid, auid, auindex, needsinit) {
+                window.launchCMI5Activity = function(event, cmid, auid, auindex, needsinit) {
+                    console.log('launchCMI5Activity called:', {cmid, auid, auindex, needsinit});
+
+                    // Prevent default link behavior
+                    if (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+
                     // Open view.php in new window/tab
                     // If needs init, just open view.php to initialize AUs
                     // Otherwise auto-launch the specific AU in modal player
@@ -357,15 +374,19 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         url += '&launch=' + auid + '&auindex=' + auindex;
                     }
 
+                    console.log('Opening popup with URL:', url);
+
                     // Open in new window (popup style)
                     var width = Math.min(1400, window.screen.width * 0.9);
                     var height = Math.min(900, window.screen.height * 0.9);
                     var left = (window.screen.width - width) / 2;
                     var top = (window.screen.height - height) / 2;
 
-                    window.open(url, 'CMI5Activity_' + cmid,
+                    var popup = window.open(url, 'CMI5Activity_' + cmid,
                         'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top +
                         ',toolbar=no,menubar=no,scrollbars=yes,resizable=yes,location=no');
+
+                    console.log('Popup window opened:', popup);
 
                     return false;
                 };
