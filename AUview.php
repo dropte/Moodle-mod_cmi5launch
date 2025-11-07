@@ -570,11 +570,11 @@ if (!is_null($au->sessions)) {
        foreach ($sessionids as $sessionid) {
            $session = $DB->get_record('cmi5launch_sessions', ['sessionid' => $sessionid]);
 
-           if ($session) {
+           if ($session && is_object($session)) {
                $sessioninfo = [];
 
                // Format and add session created date
-               if ($session->createdat) {
+               if (isset($session->createdat) && !empty($session->createdat)) {
                    $createdAt = new DateTime($session->createdat, new DateTimeZone('US/Eastern'));
                    $createdAt->setTimezone(new DateTimeZone('America/New_York'));
                    $sessioninfo[] = "<span class='date-cell'>" . $createdAt->format('D d M Y H:i:s') . "</span>";

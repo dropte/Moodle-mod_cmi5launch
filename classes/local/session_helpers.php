@@ -65,12 +65,26 @@ class session_helpers {
         try {
             // Get the session from DB with session id.
             $session = $DB->get_record('cmi5launch_sessions', array('sessionid' => $sessionid));
-               
+
+            // Check if session exists - may have been deleted after reset
+            if (!$session) {
+                // Session doesn't exist - it may have been reset. Return early.
+                error_log("CMI5: Session $sessionid not found in database - may have been reset");
+                return null;
+            }
+
             // Reload cmi5 instance.
             $record = $DB->get_record('cmi5launch', array('id' => $cmi5launchid));
 
             // Reload user course instance.
             $userscourse = $DB->get_record('cmi5launch_usercourse', ['courseid' => $record->courseid, 'userid' => $user->id]);
+
+            // Check if user course exists
+            if (!$userscourse) {
+                error_log("CMI5: User course not found for session $sessionid - may have been reset");
+                return null;
+            }
+
             // Get updates from the LRS as well.
             $session = $getprogress($userscourse->registrationid, $session);
             // Get updates from cmi5player.
@@ -109,8 +123,12 @@ class session_helpers {
                 }
             }
 
-            // Now update to table.
-            $DB->update_record('cmi5launch_sessions', $session);
+            // Now update to table - check session has ID first
+            if ($session && !empty($session->id)) {
+                $DB->update_record('cmi5launch_sessions', $session);
+            } else {
+                error_log("CMI5: Cannot update session - session object missing or has no ID");
+            }
 
         } catch (\Throwable $e) {
             
