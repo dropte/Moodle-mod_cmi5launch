@@ -66,6 +66,13 @@ $event->add_record_snapshot('course_modules', $cm);
 $event->trigger();
 */
 
+// Check if in embed mode (loaded in iframe from course page)
+$embedmode = optional_param('embed', 0, PARAM_INT);
+
+// Check if auto-launch from course page
+$autolaunchauid = optional_param('launch', '', PARAM_TEXT);
+$autolaunchindex = optional_param('auindex', 0, PARAM_INT);
+
 // Print the page header.
 $PAGE->set_url('/mod/cmi5launch/view.php', array('id' => $cm->id));
 $PAGE->set_title(format_string($cmi5launch->name));
@@ -74,12 +81,10 @@ $PAGE->set_context($context);
 $PAGE->requires->css('/mod/cmi5launch/styles.css');
 $PAGE->requires->jquery();
 
-// Output starts here.
-echo $OUTPUT->header();
-
-// Check if auto-launch from course page
-$autolaunchauid = optional_param('launch', '', PARAM_TEXT);
-$autolaunchindex = optional_param('auindex', 0, PARAM_INT);
+// Output starts here - skip header in embed mode
+if (!$embedmode) {
+    echo $OUTPUT->header();
+}
 
 // Reload cmi5 course instance.
 $record = $DB->get_record('cmi5launch', array('id' => $cmi5launch->id));
@@ -845,6 +850,8 @@ $tabledata = array();
 // We need id to get progress.
 $cmid = $cmi5launch->id;
 
+// Only show activity table in normal mode, not embed mode
+if (!$embedmode) {
 // Create table to display on page.
 $table = new html_table();
 $table->id = 'cmi5launch_autable';
@@ -1089,5 +1096,9 @@ echo html_writer::table($table);
         <input id="n" name="n" type="hidden" value="<?php echo $n ?>">
     </form>
 <?php
+} // End if (!$embedmode) - close the table/form section
 
-echo $OUTPUT->footer();
+// Output footer only in normal mode
+if (!$embedmode) {
+    echo $OUTPUT->footer();
+}

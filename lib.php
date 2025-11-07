@@ -367,8 +367,8 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         event.stopPropagation();
                     }
 
-                    // Build URL for iframe
-                    var url = '/mod/cmi5launch/view.php?id=' + cmid;
+                    // Build URL for iframe with embed mode
+                    var url = '/mod/cmi5launch/view.php?id=' + cmid + '&embed=1';
                     if (!needsinit) {
                         url += '&launch=' + auid + '&auindex=' + auindex;
                     }
