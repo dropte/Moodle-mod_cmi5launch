@@ -232,6 +232,73 @@ if ($showbutton) {
     $settings->add(new admin_setting_configselect('cmi5launch/MOD_CMI5LAUNCH_LAST_ATTEMPTlock',
         get_string('mod_cmi5launch_last_attempt_lock', 'cmi5launch'), get_string('mod_cmi5launch_last_attempt_lockdesc', 'cmi5launch'), 0, $yesno));
 
+    // User Experience Settings - Terminology Customization.
+    $settings->add(new admin_setting_heading('cmi5launch/terminology',
+        get_string('terminologyheading', 'cmi5launch'),
+        get_string('terminologyheading_help', 'cmi5launch')));
+
+    // AU terminology.
+    $auoptions = array(
+        'activity' => get_string('au_term_activity', 'cmi5launch'),
+        'lesson' => get_string('au_term_lesson', 'cmi5launch'),
+        'module' => get_string('au_term_module', 'cmi5launch'),
+        'unit' => get_string('au_term_unit', 'cmi5launch'),
+        'content' => get_string('au_term_content', 'cmi5launch'),
+        'au' => get_string('au_term_au', 'cmi5launch'),
+        'custom' => get_string('au_term_custom', 'cmi5launch')
+    );
+
+    $settings->add(new admin_setting_configselect('cmi5launch/au_terminology',
+        get_string('au_terminology', 'cmi5launch'),
+        get_string('au_terminology_help', 'cmi5launch'),
+        'activity',
+        $auoptions));
+
+    // Custom AU term (if selected).
+    $settings->add(new admin_setting_configtext('cmi5launch/au_terminology_custom',
+        get_string('au_terminology_custom', 'cmi5launch'),
+        get_string('au_terminology_custom_help', 'cmi5launch'),
+        ''));
+
+    // Status terminology.
+    $statusoptions = array(
+        'completed' => get_string('status_term_completed', 'cmi5launch'),
+        'passed' => get_string('status_term_passed', 'cmi5launch'),
+        'finished' => get_string('status_term_finished', 'cmi5launch'),
+        'satisfied' => get_string('status_term_satisfied', 'cmi5launch'),
+        'custom' => get_string('status_term_custom', 'cmi5launch')
+    );
+
+    $settings->add(new admin_setting_configselect('cmi5launch/status_terminology',
+        get_string('status_terminology', 'cmi5launch'),
+        get_string('status_terminology_help', 'cmi5launch'),
+        'completed',
+        $statusoptions));
+
+    // Custom status term.
+    $settings->add(new admin_setting_configtext('cmi5launch/status_terminology_custom',
+        get_string('status_terminology_custom', 'cmi5launch'),
+        get_string('status_terminology_custom_help', 'cmi5launch'),
+        ''));
+
+    // Module display name.
+    $settings->add(new admin_setting_configtext('cmi5launch/module_displayname',
+        get_string('module_displayname', 'cmi5launch'),
+        get_string('module_displayname_help', 'cmi5launch'),
+        'Interactive Content'));
+
+    // Technical mode toggle.
+    $settings->add(new admin_setting_configcheckbox('cmi5launch/show_technical_terms',
+        get_string('show_technical_terms', 'cmi5launch'),
+        get_string('show_technical_terms_help', 'cmi5launch'),
+        0));
+
+    // Progress polling interval.
+    $settings->add(new admin_setting_configtext('cmi5launch/polling_interval',
+        get_string('polling_interval', 'cmi5launch'),
+        get_string('polling_interval_help', 'cmi5launch'),
+        '10',
+        PARAM_INT));
 
     }
 

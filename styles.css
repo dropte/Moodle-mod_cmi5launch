@@ -156,3 +156,123 @@
 .launch-table tbody tr.visible {
     display: table-row; /* Show rows with 'visible' class */
 }
+
+/* Toast notification animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+/* Toast notification styles */
+.cmi5-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    font-weight: bold;
+    animation: slideIn 0.3s ease;
+}
+
+/* Progress status indicator */
+#progress-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    padding: 10px 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border-left: 4px solid #2196F3;
+    font-size: 14px;
+    color: #555;
+}
+
+#progress-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(33, 150, 243, 0.3);
+    border-top-color: #2196F3;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Status badges for improved visual feedback */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.completed {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status-badge.in-progress {
+    background-color: #2196F3;
+    color: white;
+}
+
+.status-badge.not-attempted {
+    background-color: #9E9E9E;
+    color: white;
+}
+
+/* Pulse animation for in-progress items */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.status-badge.in-progress {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Success animation */
+@keyframes successPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+.status-badge.completed.new {
+    animation: successPulse 1s ease-out;
+}

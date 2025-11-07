@@ -80,18 +80,45 @@ echo $OUTPUT->header();
 // Reload cmi5 course instance.
 $record = $DB->get_record('cmi5launch', array('id' => $cmi5launch->id));
 
-// TODO: Put all the php inserted data as parameters on the functions and put the functions in a separate JS file.
+// Get configurable polling interval.
+$pollinginterval = get_config('cmi5launch', 'polling_interval') ?? 10;
+$pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
 ?>
 
+    <!-- Progress status indicator -->
+    <div id="progress-status" style="display: none; margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+        <span id="progress-spinner" class="spinner-border spinner-border-sm" role="status" style="display:none;">
+            <span class="sr-only"><?php echo get_string('progress_checking', 'cmi5launch'); ?></span>
+        </span>
+        <span id="last-update-text"><?php echo get_string('last_updated', 'cmi5launch', get_string('just_now', 'cmi5launch')); ?></span>
+    </div>
+
     <script>
-      
+        var lastUpdateTime = Date.now();
+
         function key_test(registration) {
-        
             //Onclick calls this
             if (event.keyCode === 13 || event.keyCode === 32) {
-
                 mod_cmi5launch_launchexperience(registration);
             }
+        }
+
+        // Function to update the "last updated" timestamp
+        function updateTimestamp() {
+            var now = Date.now();
+            var elapsed = Math.floor((now - lastUpdateTime) / 1000);
+            var message;
+
+            if (elapsed < 5) {
+                message = '<?php echo get_string('just_now', 'cmi5launch'); ?>';
+            } else if (elapsed < 60) {
+                message = elapsed + ' <?php echo get_string('seconds_ago', 'cmi5launch', ''); ?>'.replace('{$a}', elapsed);
+            } else {
+                var minutes = Math.floor(elapsed / 60);
+                message = minutes + ' <?php echo get_string('minutes_ago', 'cmi5launch', ''); ?>'.replace('{$a}', minutes);
+            }
+
+            $('#last-update-text').text('<?php echo get_string('last_updated', 'cmi5launch', ''); ?>'.replace('{$a}', message));
         }
 
         // Function to run when the experience is launched (on click).
@@ -105,7 +132,7 @@ $record = $DB->get_record('cmi5launch', array('id' => $cmi5launch->id));
 
             //Add some new content.
             if (!$('#cmi5launch_status').length) {
-                var message = "<? echo get_string('cmi5launch_progress', 'cmi5launch'); ?>";
+                var message = "<?php echo get_string('cmi5launch_progress', 'cmi5launch'); ?>";
                 $('#region-main .card-body').append('\
                 <div id="cmi5launch_status"> \
                     <span id="cmi5launch_completioncheck"></span> \
@@ -118,16 +145,28 @@ $record = $DB->get_record('cmi5launch', array('id' => $cmi5launch->id));
                 </div>\
             ');
             }
-            $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>');
+            checkProgress();
         }
 
-        // TODO: there may be a better way to check completion. Out of scope for current project.
-        //MB - Someone elses todo, may be worth looking into
-    
+        function checkProgress() {
+            // Show spinner
+            $('#progress-status').show();
+            $('#progress-spinner').show();
+
+            $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>', function() {
+                // Hide spinner and update timestamp
+                $('#progress-spinner').hide();
+                lastUpdateTime = Date.now();
+                updateTimestamp();
+            });
+        }
+
         $(document).ready(function() {
-            setInterval(function() {
-                $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>');
-            }, 30000); // TODO: make this interval a configuration setting.
+            // Update timestamp display every second
+            setInterval(updateTimestamp, 1000);
+
+            // Check for progress updates at configured interval
+            setInterval(checkProgress, <?php echo $pollinginterval; ?>);
         });
     </script>
 <?php
@@ -220,13 +259,13 @@ $cmid = $cmi5launch->id;
 // Create table to display on page.
 $table = new html_table();
 $table->id = 'cmi5launch_autable';
-$table->caption = get_string('autableheader', 'cmi5launch');
+$table->caption = cmi5launch_get_term('au', true);  // "Activities" or configured term
 $table->attributes['class'] = 'generaltable cmi5launch-table au-table';
 $table->head = array(
-    get_string('cmi5launchviewAUname', 'cmi5launch'),
-    get_string('cmi5launchviewstatus', 'cmi5launch'),
-    get_string('cmi5launchviewgradeheader', 'cmi5launch'),
-    get_string('cmi5launchviewregistrationheader', 'cmi5launch'),
+    get_string('name'),  // Generic "Name"
+    cmi5launch_get_term('satisfied', false) . ' ' . get_string('status'),  // "Completed Status"
+    get_string('grade'),  // Generic "Grade"
+    get_string('cmi5launchviewregistrationheader', 'cmi5launch'),  // "Sessions"
 );
 
 // Array to hold Au scores.
@@ -343,7 +382,7 @@ try {
         // If the 'sessions' in this AU are null we know this hasn't even been attempted.
         if ($au->sessions == null) {
 
-            $austatus = "Not attempted";
+            $austatus = get_string('not_attempted', 'cmi5launch');
 
         } else {
 
@@ -352,19 +391,19 @@ try {
 
             // If it's been attempted but no moveon value.
             if ($aumoveon == "NotApplicable") {
-                $austatus = "viewed";
+                $austatus = get_string('viewed', 'core');
             } else {
                 // IF it DOES have a moveon value.
                 // If satisifed is returned true.
                 if ($ausatisfied == "true") {
 
-                    $austatus = "Satisfied";
+                    $austatus = cmi5launch_get_term('satisfied');  // "Completed" or configured
                     // Also update AU.
                     $au->satisfied = "true";
                 } else {
 
                     // If not, its in progress.
-                    $austatus = "In Progress";
+                    $austatus = get_string('in_progress', 'cmi5launch');
                     // Also update AU.
                     $au->satisfied = "false";
                 }

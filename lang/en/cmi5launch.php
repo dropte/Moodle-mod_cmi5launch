@@ -343,3 +343,52 @@ $string['privacy:metadata:cmi5_player:actor'] = 'When retrieving a launch URL or
 $string['privacy:metadata:cmi5_player:courseid'] = 'The cmi5 player assigns each user and their activity instance a course ID, and it can is used to request a launch URL.';
 $string['privacy:metadata:cmi5_player:returnurl'] = 'The return URL is a parameter sent to the cmi5 player when requesting a launch URL. It is where the browser returns to upon closing the launched activity. It has a unique ID on the end directing back to the user\'s particular course instance.';
 $string['privacy:metadata:cmi5_player:sessionid'] = 'The cmi5 player assigns each user\'s session a unique ID, and this is sent to the cmi5 player when requesting updated session info.';
+
+// Terminology customization strings.
+$string['terminologyheading'] = 'User interface terminology';
+$string['terminologyheading_help'] = 'Customize how CMI5 technical terms appear to end users. This makes the plugin more accessible for learners unfamiliar with CMI5 standards. Changes only affect the display labels - internal CMI5 standards are preserved.';
+
+$string['au_terminology'] = 'Content unit label';
+$string['au_terminology_help'] = 'What to call individual learning units. CMI5 calls these "Assignable Units" or "AUs", but you can choose a more intuitive term for your learners.';
+$string['au_terminology_custom'] = 'Custom content unit label';
+$string['au_terminology_custom_help'] = 'Enter your own term for learning units. Use format: "Singular|Plural" (e.g., "Section|Sections" or "Topic|Topics")';
+
+$string['au_term_activity'] = 'Activity / Activities';
+$string['au_term_lesson'] = 'Lesson / Lessons';
+$string['au_term_module'] = 'Module / Modules';
+$string['au_term_unit'] = 'Learning Unit / Learning Units';
+$string['au_term_content'] = 'Content / Content Items';
+$string['au_term_au'] = 'Assignable Unit (CMI5) / Assignable Units';
+$string['au_term_custom'] = 'Custom (specify below)';
+
+$string['status_terminology'] = 'Completion status label';
+$string['status_terminology_help'] = 'What to call when a unit is successfully completed. CMI5 calls this "satisfied", but you can use a more familiar term.';
+$string['status_terminology_custom'] = 'Custom status label';
+$string['status_terminology_custom_help'] = 'Enter your own term for the completion status (e.g., "Done", "Achieved", "Mastered")';
+
+$string['status_term_completed'] = 'Completed';
+$string['status_term_passed'] = 'Passed';
+$string['status_term_finished'] = 'Finished';
+$string['status_term_satisfied'] = 'Satisfied (CMI5)';
+$string['status_term_custom'] = 'Custom (specify below)';
+
+$string['module_displayname'] = 'Activity type display name';
+$string['module_displayname_help'] = 'How this activity type appears to users in course pages and activity chooser. Default is "cmi5 launch link", but you can make it more user-friendly like "Interactive Content" or "Learning Activity".';
+
+$string['show_technical_terms'] = 'Show technical CMI5 terms';
+$string['show_technical_terms_help'] = 'If enabled, show CMI5 technical terminology alongside user-friendly labels in parentheses (e.g., "Activity (AU)"). Useful for administrators and course creators who need to understand the CMI5 structure.';
+
+$string['polling_interval'] = 'Progress check interval';
+$string['polling_interval_help'] = 'How often (in seconds) to automatically check for progress updates. Lower values mean faster updates but more server load. Recommended: 10-30 seconds. Default: 10 seconds.';
+
+// User experience strings.
+$string['progress_checking'] = 'Checking for updates...';
+$string['progress_updated'] = 'Progress updated!';
+$string['last_updated'] = 'Last updated: {$a}';
+$string['just_now'] = 'Just now';
+$string['seconds_ago'] = '{$a} seconds ago';
+$string['minutes_ago'] = '{$a} minutes ago';
+$string['launching'] = 'Launching...';
+$string['launch_success'] = 'Activity launched! Complete it in the other tab.';
+$string['not_attempted'] = 'Not attempted';
+$string['in_progress'] = 'In Progress';

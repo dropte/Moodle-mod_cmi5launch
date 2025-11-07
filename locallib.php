@@ -51,8 +51,81 @@ define('CMI5_UPDATE_NEVER', '0');
 define('CMI5_UPDATE_EVERYDAY', '2');
 define('CMI5_UPDATE_EVERYTIME', '3');
 
+/**
+ * Get user-friendly terminology for CMI5 concepts
+ *
+ * This function translates CMI5 technical jargon into user-friendly terms
+ * based on admin configuration. Internal CMI5 standards are preserved.
+ *
+ * @package  mod_cmi5launch
+ * @category cmi5
+ * @param string $concept The CMI5 concept (au, satisfied, etc.)
+ * @param bool $plural Whether to return plural form
+ * @param bool $technical Whether to show technical term in parentheses
+ * @return string User-friendly term
+ */
+function cmi5launch_get_term($concept, $plural = false, $technical = false) {
+    $config = get_config('cmi5launch');
 
- 
+    switch ($concept) {
+        case 'au':
+            $term = $config->au_terminology ?? 'activity';
+            if ($term === 'custom' && !empty($config->au_terminology_custom)) {
+                $parts = explode('|', $config->au_terminology_custom);
+                $term = $plural && isset($parts[1]) ? $parts[1] : $parts[0];
+            } else {
+                // Built-in plural forms.
+                $terms = [
+                    'au' => $plural ? get_string('au_term_au', 'cmi5launch') : 'Assignable Unit',
+                    'activity' => $plural ? 'Activities' : 'Activity',
+                    'lesson' => $plural ? 'Lessons' : 'Lesson',
+                    'module' => $plural ? 'Modules' : 'Module',
+                    'unit' => $plural ? 'Learning Units' : 'Learning Unit',
+                    'content' => $plural ? 'Content Items' : 'Content',
+                ];
+                $term = $terms[$term] ?? $terms['activity'];
+            }
+
+            if ($technical && !empty($config->show_technical_terms)) {
+                $term .= ' (AU)';
+            }
+            break;
+
+        case 'satisfied':
+            $term = $config->status_terminology ?? 'completed';
+            if ($term === 'custom' && !empty($config->status_terminology_custom)) {
+                $term = $config->status_terminology_custom;
+            } else {
+                $terms = [
+                    'satisfied' => 'Satisfied',
+                    'completed' => 'Completed',
+                    'passed' => 'Passed',
+                    'finished' => 'Finished',
+                ];
+                $term = ucfirst($terms[$term] ?? $terms['completed']);
+            }
+
+            if ($technical && !empty($config->show_technical_terms)) {
+                $term .= ' (Satisfied)';
+            }
+            break;
+
+        case 'not_satisfied':
+            $term = cmi5launch_get_term('satisfied', false, false);
+            $term = 'Not ' . $term;
+            break;
+
+        case 'module_name':
+            $term = $config->module_displayname ?? 'Interactive Content';
+            break;
+
+        default:
+            $term = $concept;
+    }
+
+    return $term;
+}
+
 /**
  * Builds a cmi5 launch link for the current module and a given registration
  *

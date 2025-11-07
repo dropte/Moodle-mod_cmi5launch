@@ -64,18 +64,43 @@ echo $OUTPUT->header();
 </form>
 <?php
 
-// TODO: Put all the php inserted data as parameters on the functions and put the functions in a separate JS file.
+// Get configurable polling interval.
+$pollinginterval = get_config('cmi5launch', 'polling_interval') ?? 10;
+$pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
 
+// Get AU term for button labels.
+$auterm = cmi5launch_get_term('au', false);
 ?>
+
+    <!-- Progress status indicator -->
+    <div id="progress-status" style="display: none; margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+        <span id="progress-spinner" class="spinner-border spinner-border-sm" role="status" style="display:none;">
+            <span class="sr-only"><?php echo get_string('progress_checking', 'cmi5launch'); ?></span>
+        </span>
+        <span id="last-update-text"><?php echo get_string('last_updated', 'cmi5launch', get_string('just_now', 'cmi5launch')); ?></span>
+    </div>
 
     <script>
         const initialVisibleAUCount = <?php echo $initialVisibleAUCount; ?>;
-        // Refresh the page even if cached
-        window.addEventListener("pageshow", function (event) {
-            if (event.persisted) {
-                window.location.reload();
+        var lastUpdateTime = Date.now();
+
+        // Function to update the "last updated" timestamp
+        function updateTimestamp() {
+            var now = Date.now();
+            var elapsed = Math.floor((now - lastUpdateTime) / 1000);
+            var message;
+
+            if (elapsed < 5) {
+                message = '<?php echo get_string('just_now', 'cmi5launch'); ?>';
+            } else if (elapsed < 60) {
+                message = elapsed + ' <?php echo get_string('seconds_ago', 'cmi5launch', ''); ?>'.replace('{$a}', elapsed);
+            } else {
+                var minutes = Math.floor(elapsed / 60);
+                message = minutes + ' <?php echo get_string('minutes_ago', 'cmi5launch', ''); ?>'.replace('{$a}', minutes);
             }
-        });
+
+            $('#last-update-text').text('<?php echo get_string('last_updated', 'cmi5launch', ''); ?>'.replace('{$a}', message));
+        }
         function toggleProgress(progressCellId) {
             const content = document.getElementById(progressCellId);
             if (content.style.display === 'none' || content.style.display === '') {
@@ -101,11 +126,64 @@ echo $OUTPUT->header();
         // }
 
         function launch_session(auid, restart) {
+            // Show launching message
+            showNotification('<?php echo get_string('launching', 'cmi5launch'); ?>', 'info');
+
             // Construct the URL with parameters
-            const url = `launch.php?launchform_registration=${encodeURIComponent(auid)}&restart=${encodeURIComponent(restart)}&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;            
+            const url = `launch.php?launchform_registration=${encodeURIComponent(auid)}&restart=${encodeURIComponent(restart)}&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
+
             // Open the URL in a new tab
             window.open(url, '_blank');
-            window.location.reload();
+
+            // Show success notification and start checking for updates (no page reload)
+            setTimeout(function() {
+                showNotification('<?php echo get_string('launch_success', 'cmi5launch'); ?>', 'success');
+                // Start faster polling for updates
+                checkProgress();
+            }, 1500);
+        }
+
+        function showNotification(message, type) {
+            type = type || 'info';
+            var bgColor = type === 'success' ? '#4CAF50' : (type === 'info' ? '#2196F3' : '#ff9800');
+
+            var toast = $('<div></div>')
+                .addClass('cmi5-toast')
+                .text(message)
+                .css({
+                    'position': 'fixed',
+                    'top': '20px',
+                    'right': '20px',
+                    'padding': '15px 20px',
+                    'background': bgColor,
+                    'color': 'white',
+                    'border-radius': '5px',
+                    'box-shadow': '0 4px 6px rgba(0,0,0,0.2)',
+                    'z-index': '10000',
+                    'animation': 'slideIn 0.3s ease'
+                });
+
+            $('body').append(toast);
+
+            // Auto-remove after 3 seconds
+            setTimeout(function() {
+                toast.fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+
+        function checkProgress() {
+            // Show spinner
+            $('#progress-status').show();
+            $('#progress-spinner').show();
+
+            $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>', function() {
+                // Hide spinner and update timestamp
+                $('#progress-spinner').hide();
+                lastUpdateTime = Date.now();
+                updateTimestamp();
+            });
         }
 
 
@@ -118,11 +196,12 @@ echo $OUTPUT->header();
         //     $('#launchform').submit();
         // }
 
-        // TODO: there may be a better way to check completion. Out of scope for current project.
         $(document).ready(function() {
-            setInterval(function() {
-                $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>');
-            }, 10000); // TODO: make this interval a configuration setting.
+            // Update timestamp display every second
+            setInterval(updateTimestamp, 1000);
+
+            // Check for progress updates at configured interval
+            setInterval(checkProgress, <?php echo $pollinginterval; ?>);
 
             const rows = document.querySelectorAll('#cmi5launch_auSessionTable tbody tr');
 
@@ -273,11 +352,13 @@ if ($au->sessions && count(json_decode($au->sessions)) > $initialVisibleAUCount)
 
 echo "<div class='button-container' tabindex='0' onkeyup=\"key_test('" . $auid . "')\" id='cmi5launch_newattempt'>
         <button class='btn resume-btn' onclick=\"launch_session('" . $auid . "', false)\">"
-        . ($au->sessions === null ? "Start AU" : "Resume AU")
+        . ($au->sessions === null ? get_string('start') . ' ' . $auterm : get_string('resume') . ' ' . $auterm)
         . "</button>";
 
 if ($au->sessions) {
-    echo "<button class='btn restart-btn' onclick=\"launch_session('" . $auid . "', true)\">Restart AU</button>";
+    echo "<button class='btn restart-btn' onclick=\"launch_session('" . $auid . "', true)\">"
+        . get_string('restart') . ' ' . $auterm
+        . "</button>";
 }
 
 echo "</div>";
