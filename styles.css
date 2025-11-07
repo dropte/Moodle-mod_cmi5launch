@@ -441,6 +441,52 @@
     font-weight: 600;
 }
 
+/* Activity navigation controls */
+.activity-nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-right: 12px;
+}
+
+.nav-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 20px;
+    font-weight: 400;
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    line-height: 1;
+    padding: 0;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.nav-btn:disabled {
+    cursor: not-allowed;
+}
+
+.activity-counter {
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 8px;
+    min-width: 60px;
+    text-align: center;
+}
+
 .window-controls-right {
     display: flex;
     gap: 8px;

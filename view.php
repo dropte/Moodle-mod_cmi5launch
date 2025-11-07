@@ -129,17 +129,35 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
         var playerState = {
             isMaximized: false,
             isMinimized: false,
-            lastPosition: { width: '80%', height: '80%', top: '10%', left: '10%' }
+            lastPosition: { width: '80%', height: '80%', top: '10%', left: '10%' },
+            currentAUIndex: 0,
+            auList: [],
+            windowId: null
         };
 
+        // Build AU list from PHP
+        var availableAUs = [
+            <?php
+            $auListJS = array();
+            foreach ($auids as $index => $auid) {
+                $au = $getaus($auid);
+                $auListJS[] = '{id: "' . addslashes($auid) . '", title: "' . addslashes($au->title) . '", index: ' . $index . '}';
+            }
+            echo implode(",\n            ", $auListJS);
+            ?>
+        ];
+
         // Function to run when the experience is launched (on click).
-        function mod_cmi5launch_launchexperience(auid) {
+        function mod_cmi5launch_launchexperience(auid, windowId) {
             // Show launching notification
             showNotification('<?php echo get_string('launching', 'cmi5launch'); ?>', 'info');
 
+            // Find the AU index
+            const auIndex = availableAUs.findIndex(au => au.id === auid);
+
             // Launch directly in modal player
             const url = `launch.php?launchform_registration=${encodeURIComponent(auid)}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
-            openPlayerModal(url);
+            openPlayerModal(url, auIndex, windowId);
 
             // Show success notification and start checking for updates
             setTimeout(function() {
@@ -148,28 +166,38 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             }, 500);
         }
 
-        function openPlayerModal(url) {
+        function openPlayerModal(url, auIndex, windowId) {
+            windowId = windowId || 'main';
+            const modalId = 'cmi5-player-modal-' + windowId;
+
             // Create modal if it doesn't exist
-            if (!document.getElementById('cmi5-player-modal')) {
+            if (!document.getElementById(modalId)) {
                 const modal = document.createElement('div');
-                modal.id = 'cmi5-player-modal';
+                modal.id = modalId;
                 modal.className = 'cmi5-modal';
+                modal.dataset.windowId = windowId;
                 modal.innerHTML = `
-                    <div class="cmi5-modal-content cmi5-window" id="cmi5-window">
-                        <div class="cmi5-modal-header" id="cmi5-window-header">
+                    <div class="cmi5-modal-content cmi5-window" id="cmi5-window-${windowId}">
+                        <div class="cmi5-modal-header" id="cmi5-window-header-${windowId}">
                             <div class="window-controls-left">
                                 <span class="window-drag-icon">⋮⋮</span>
-                                <h3>Activity Player</h3>
+                                <div class="activity-nav-controls">
+                                    <button class="nav-btn" onclick="navigateAU('${windowId}', -1)" title="Previous Activity" id="nav-prev-${windowId}">‹</button>
+                                    <span class="activity-counter" id="activity-counter-${windowId}">1 of 1</span>
+                                    <button class="nav-btn" onclick="navigateAU('${windowId}', 1)" title="Next Activity" id="nav-next-${windowId}">›</button>
+                                </div>
+                                <h3 id="activity-title-${windowId}">Activity Player</h3>
                             </div>
                             <div class="window-controls-right">
-                                <button class="window-control-btn" onclick="minimizePlayer()" title="Minimize">−</button>
-                                <button class="window-control-btn" onclick="toggleMaximize()" title="Maximize/Restore">□</button>
-                                <button class="window-control-btn" onclick="popOutPlayer()" title="Pop Out to New Window">⧉</button>
-                                <button class="cmi5-modal-close" onclick="closePlayerModal()" title="Close">&times;</button>
+                                <button class="window-control-btn" onclick="openNewWindow()" title="Open New Window">+</button>
+                                <button class="window-control-btn" onclick="minimizePlayer('${windowId}')" title="Minimize">−</button>
+                                <button class="window-control-btn" onclick="toggleMaximize('${windowId}')" title="Maximize/Restore">□</button>
+                                <button class="window-control-btn" onclick="popOutPlayer('${windowId}')" title="Pop Out to New Window">⧉</button>
+                                <button class="cmi5-modal-close" onclick="closePlayerModal('${windowId}')" title="Close">&times;</button>
                             </div>
                         </div>
                         <div class="cmi5-modal-body">
-                            <iframe id="cmi5-player-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                            <iframe id="cmi5-player-iframe-${windowId}" src="" frameborder="0" allowfullscreen></iframe>
                         </div>
                         <div class="resize-handle resize-handle-br"></div>
                         <div class="resize-handle resize-handle-bl"></div>
@@ -184,39 +212,112 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
                 document.body.appendChild(modal);
 
                 // Make window draggable
-                makeWindowDraggable();
+                makeWindowDraggable(windowId);
                 // Make window resizable
-                makeWindowResizable();
+                makeWindowResizable(windowId);
+
+                // Store window state
+                if (!window.playerWindows) window.playerWindows = {};
+                window.playerWindows[windowId] = {
+                    isMaximized: false,
+                    isMinimized: false,
+                    currentAUIndex: auIndex,
+                    lastPosition: { width: '80%', height: '80%', top: '10%', left: '10%' }
+                };
             }
 
+            // Update current AU index for this window
+            window.playerWindows[windowId].currentAUIndex = auIndex;
+
             // Set iframe source and show modal
-            const iframe = document.getElementById('cmi5-player-iframe');
+            const iframe = document.getElementById('cmi5-player-iframe-' + windowId);
             iframe.src = url;
 
-            const modal = document.getElementById('cmi5-player-modal');
-            const windowEl = document.getElementById('cmi5-window');
+            // Update navigation controls
+            updateNavigationControls(windowId);
 
-            // Reset to default size if not maximized
-            if (!playerState.isMaximized) {
+            const modal = document.getElementById(modalId);
+            const windowEl = document.getElementById('cmi5-window-' + windowId);
+
+            // Reset to default size if not maximized, offset each new window
+            if (!window.playerWindows[windowId].isMaximized) {
+                const offset = Object.keys(window.playerWindows).length * 30;
                 windowEl.style.width = '80%';
                 windowEl.style.height = '80%';
-                windowEl.style.top = '10%';
-                windowEl.style.left = '10%';
+                windowEl.style.top = (10 + offset) + 'px';
+                windowEl.style.left = (10 + offset) + 'px';
                 windowEl.style.transform = 'none';
             }
 
             modal.style.display = 'flex';
             windowEl.style.display = 'flex';
-            playerState.isMinimized = false;
+            window.playerWindows[windowId].isMinimized = false;
         }
 
-        function closePlayerModal() {
-            const modal = document.getElementById('cmi5-player-modal');
-            const iframe = document.getElementById('cmi5-player-iframe');
+        function navigateAU(windowId, direction) {
+            const state = window.playerWindows[windowId];
+            const newIndex = state.currentAUIndex + direction;
+
+            if (newIndex >= 0 && newIndex < availableAUs.length) {
+                const au = availableAUs[newIndex];
+                const url = `launch.php?launchform_registration=${encodeURIComponent(au.id)}&restart=false&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
+
+                // Update iframe
+                const iframe = document.getElementById('cmi5-player-iframe-' + windowId);
+                iframe.src = url;
+
+                // Update state
+                state.currentAUIndex = newIndex;
+
+                // Update controls
+                updateNavigationControls(windowId);
+
+                // Show notification
+                showNotification(`Loading ${au.title}`, 'info');
+
+                // Refresh progress
+                setTimeout(() => checkProgress(), 1000);
+            }
+        }
+
+        function updateNavigationControls(windowId) {
+            const state = window.playerWindows[windowId];
+            const currentAU = availableAUs[state.currentAUIndex];
+
+            // Update counter and title
+            document.getElementById('activity-counter-' + windowId).textContent = `${state.currentAUIndex + 1} of ${availableAUs.length}`;
+            document.getElementById('activity-title-' + windowId).textContent = currentAU.title;
+
+            // Enable/disable navigation buttons
+            const prevBtn = document.getElementById('nav-prev-' + windowId);
+            const nextBtn = document.getElementById('nav-next-' + windowId);
+
+            prevBtn.disabled = state.currentAUIndex === 0;
+            nextBtn.disabled = state.currentAUIndex === availableAUs.length - 1;
+
+            prevBtn.style.opacity = state.currentAUIndex === 0 ? '0.3' : '1';
+            nextBtn.style.opacity = state.currentAUIndex === availableAUs.length - 1 ? '0.3' : '1';
+        }
+
+        function openNewWindow() {
+            const newWindowId = 'window-' + Date.now();
+            // Launch the first AU in the new window
+            mod_cmi5launch_launchexperience(availableAUs[0].id, newWindowId);
+        }
+
+        function closePlayerModal(windowId) {
+            windowId = windowId || 'main';
+            const modal = document.getElementById('cmi5-player-modal-' + windowId);
+            const iframe = document.getElementById('cmi5-player-iframe-' + windowId);
 
             if (modal) {
                 modal.style.display = 'none';
-                iframe.src = ''; // Clear iframe to stop any running content
+                if (iframe) iframe.src = ''; // Clear iframe to stop any running content
+
+                // Remove from window state
+                if (window.playerWindows) {
+                    delete window.playerWindows[windowId];
+                }
 
                 // Refresh progress after closing
                 showNotification('Checking progress...', 'info');
@@ -224,34 +325,39 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             }
         }
 
-        function minimizePlayer() {
-            const windowEl = document.getElementById('cmi5-window');
-            if (playerState.isMinimized) {
+        function minimizePlayer(windowId) {
+            windowId = windowId || 'main';
+            const windowEl = document.getElementById('cmi5-window-' + windowId);
+            const state = window.playerWindows[windowId];
+
+            if (state.isMinimized) {
                 // Restore
                 windowEl.style.display = 'flex';
-                playerState.isMinimized = false;
+                state.isMinimized = false;
             } else {
                 // Minimize
                 windowEl.style.display = 'none';
-                playerState.isMinimized = true;
+                state.isMinimized = true;
                 showNotification('Player minimized. Click to restore.', 'info');
             }
         }
 
-        function toggleMaximize() {
-            const windowEl = document.getElementById('cmi5-window');
+        function toggleMaximize(windowId) {
+            windowId = windowId || 'main';
+            const windowEl = document.getElementById('cmi5-window-' + windowId);
+            const state = window.playerWindows[windowId];
 
-            if (playerState.isMaximized) {
+            if (state.isMaximized) {
                 // Restore to previous size
-                windowEl.style.width = playerState.lastPosition.width;
-                windowEl.style.height = playerState.lastPosition.height;
-                windowEl.style.top = playerState.lastPosition.top;
-                windowEl.style.left = playerState.lastPosition.left;
+                windowEl.style.width = state.lastPosition.width;
+                windowEl.style.height = state.lastPosition.height;
+                windowEl.style.top = state.lastPosition.top;
+                windowEl.style.left = state.lastPosition.left;
                 windowEl.classList.remove('maximized');
-                playerState.isMaximized = false;
+                state.isMaximized = false;
             } else {
                 // Save current position
-                playerState.lastPosition = {
+                state.lastPosition = {
                     width: windowEl.style.width,
                     height: windowEl.style.height,
                     top: windowEl.style.top,
@@ -263,25 +369,27 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
                 windowEl.style.top = '0';
                 windowEl.style.left = '0';
                 windowEl.classList.add('maximized');
-                playerState.isMaximized = true;
+                state.isMaximized = true;
             }
         }
 
-        function popOutPlayer() {
-            const iframe = document.getElementById('cmi5-player-iframe');
-            const url = iframe.src;
+        function popOutPlayer(windowId) {
+            windowId = windowId || 'main';
+            const iframe = document.getElementById('cmi5-player-iframe-' + windowId);
+            const url = iframe ? iframe.src : '';
 
             if (url) {
                 // Open in new window
                 window.open(url, 'CMI5Player', 'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
                 // Close modal
-                closePlayerModal();
+                closePlayerModal(windowId);
             }
         }
 
-        function makeWindowDraggable() {
-            const windowEl = document.getElementById('cmi5-window');
-            const header = document.getElementById('cmi5-window-header');
+        function makeWindowDraggable(windowId) {
+            windowId = windowId || 'main';
+            const windowEl = document.getElementById('cmi5-window-' + windowId);
+            const header = document.getElementById('cmi5-window-header-' + windowId);
             let isDragging = false;
             let offsetX, offsetY;
 
@@ -327,9 +435,10 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             }
         }
 
-        function makeWindowResizable() {
-            const windowEl = document.getElementById('cmi5-window');
-            const handles = document.querySelectorAll('.resize-handle');
+        function makeWindowResizable(windowId) {
+            windowId = windowId || 'main';
+            const windowEl = document.getElementById('cmi5-window-' + windowId);
+            const handles = windowEl.querySelectorAll('.resize-handle');
 
             handles.forEach(handle => {
                 handle.addEventListener('mousedown', initResize);
@@ -456,18 +565,44 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             // Check for progress updates at configured interval
             setInterval(checkProgress, <?php echo $pollinginterval; ?>);
 
-            // Close modal on ESC key
+            // Keyboard shortcuts
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closePlayerModal();
+                // Find the topmost visible window
+                let topmostWindow = null;
+                if (window.playerWindows) {
+                    for (let wid in window.playerWindows) {
+                        const modal = document.getElementById('cmi5-player-modal-' + wid);
+                        if (modal && modal.style.display === 'flex' && !window.playerWindows[wid].isMinimized) {
+                            topmostWindow = wid;
+                        }
+                    }
+                }
+
+                if (topmostWindow) {
+                    // ESC - Close window
+                    if (e.key === 'Escape') {
+                        closePlayerModal(topmostWindow);
+                    }
+                    // Arrow Left - Previous activity
+                    else if (e.key === 'ArrowLeft' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        navigateAU(topmostWindow, -1);
+                    }
+                    // Arrow Right - Next activity
+                    else if (e.key === 'ArrowRight' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        navigateAU(topmostWindow, 1);
+                    }
                 }
             });
 
             // Restore minimized window when clicking backdrop
             window.addEventListener('click', function(e) {
-                const modal = document.getElementById('cmi5-player-modal');
-                if (e.target === modal && playerState.isMinimized) {
-                    minimizePlayer(); // Restore
+                if (e.target.classList.contains('cmi5-modal')) {
+                    const windowId = e.target.dataset.windowId;
+                    if (window.playerWindows && window.playerWindows[windowId] && window.playerWindows[windowId].isMinimized) {
+                        minimizePlayer(windowId); // Restore
+                    }
                 }
             });
         });
