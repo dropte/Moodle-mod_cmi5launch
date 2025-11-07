@@ -844,21 +844,35 @@ if (!empty($autolaunchauid)) {
 } else if ($autolaunchindex >= 0) {
     // Auto-launch by index (0-based)
     $actualIndex = $autolaunchindex;
-    echo '
-    // Auto-launch activity from course page by index
-    window.addEventListener("DOMContentLoaded", function() {
-        console.log("Auto-launching AU at index:", ' . $actualIndex . ');
-        if (availableAUs && availableAUs.length > ' . $actualIndex . ') {
-            var auToLaunch = availableAUs[' . $actualIndex . '];
-            console.log("Found AU to launch:", auToLaunch);
-            setTimeout(function() {
-                mod_cmi5launch_launchexperience(auToLaunch, "main");
-            }, 500);
-        } else {
-            console.error("No AU found at index ' . $actualIndex . '");
-        }
-    });
-    ';
+    if ($embedmode) {
+        // In embed mode (iframe), redirect directly to launch.php
+        echo '
+        // Auto-launching in embed mode - redirect directly
+        window.addEventListener("DOMContentLoaded", function() {
+            console.log("Auto-launching AU at index in embed mode:", ' . $actualIndex . ');
+            const url = "launch.php?auindex=' . $actualIndex . '&restart=false&id=' . $id . '&n=' . $n . '";
+            console.log("Redirecting to:", url);
+            window.location.href = url;
+        });
+        ';
+    } else {
+        // In normal mode, use modal player
+        echo '
+        // Auto-launch activity from course page by index
+        window.addEventListener("DOMContentLoaded", function() {
+            console.log("Auto-launching AU at index:", ' . $actualIndex . ');
+            if (availableAUs && availableAUs.length > ' . $actualIndex . ') {
+                var auToLaunch = availableAUs[' . $actualIndex . '];
+                console.log("Found AU to launch:", auToLaunch);
+                setTimeout(function() {
+                    mod_cmi5launch_launchexperience(auToLaunch, "main");
+                }, 500);
+            } else {
+                console.error("No AU found at index ' . $actualIndex . '");
+            }
+        });
+        ';
+    }
 }
 
 echo '</script>';

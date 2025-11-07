@@ -229,12 +229,15 @@ $userscourse = $DB->get_record('cmi5launch_usercourse', ['courseid'  => $record-
 
 // Check if user course exists - if not, redirect to view.php to reinitialize
 if (!$userscourse) {
+    error_log("CMI5 Launch: User course not found for user {$USER->id}, cmi5launch id {$cmi5launch->id}. Initializing user.");
     // User's registration was likely reset - redirect to view.php for reinitialization with auindex
     $params = array('id' => $cm->id, 'embed' => 1);
     if ($auindex >= 0) {
         $params['auindex'] = $auindex;
+        error_log("CMI5 Launch: Redirecting with auindex=$auindex");
     }
     $viewurl = new \moodle_url('/mod/cmi5launch/view.php', $params);
+    error_log("CMI5 Launch: Redirecting to: " . $viewurl->out());
     redirect($viewurl, get_string('reinitializing', 'cmi5launch'), 2, \core\output\notification::NOTIFY_INFO);
     exit;
 }
@@ -256,6 +259,7 @@ try {
 
     // Retrieve AU - if auindex provided, look up by index; otherwise use AU ID
     if ($auindex >= 0) {
+        error_log("CMI5 Launch: Looking up AU by index $auindex for user {$USER->id}");
         // Look up AU by index for this user
         $au = $DB->get_record('cmi5launch_aus', array(
             'auindex' => $auindex,
@@ -263,9 +267,17 @@ try {
             'moodlecourseid' => $cmi5launch->id
         ));
         if (!$au) {
-            throw new \Exception("AU not found for index $auindex. User course may need initialization.");
+            error_log("CMI5 Launch: AU not found! Checking if user has any AUs...");
+            $allaus = $DB->get_records('cmi5launch_aus', array(
+                'userid' => $USER->id,
+                'moodlecourseid' => $cmi5launch->id
+            ));
+            error_log("CMI5 Launch: User has " . count($allaus) . " AU records total");
+            throw new \Exception("AU not found for index $auindex. User has " . count($allaus) . " AUs. User course may need reinitialization.");
         }
+        error_log("CMI5 Launch: Found AU id={$au->id}, lmsid={$au->lmsid}");
     } else {
+        error_log("CMI5 Launch: Using legacy AU ID lookup: $auid");
         // Legacy: retrieve by AU ID
         $au = $retrieveaus($auid);
         $auindex = $au->auindex;
