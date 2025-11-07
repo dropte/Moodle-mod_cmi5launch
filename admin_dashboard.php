@@ -441,17 +441,31 @@ if ($currenttab === 'overview') {
         if (optional_param('action', '', PARAM_ALPHA) === 'generate_insights') {
             require_sesskey();
 
+            $insighttype = required_param('insight_type', PARAM_ALPHA);
+
             echo html_writer::start_div('mt-4');
             echo $OUTPUT->heading('Generated Insights', 4);
-            echo html_writer::start_div('alert alert-success');
-            echo html_writer::tag('p', 'AI insights generation would happen here. This requires:');
-            echo html_writer::start_tag('ul');
-            echo html_writer::tag('li', 'Collecting user progress data and LRS statements');
-            echo html_writer::tag('li', 'Formatting data for AI analysis');
-            echo html_writer::tag('li', 'Sending request to configured AI provider');
-            echo html_writer::tag('li', 'Displaying AI-generated insights and recommendations');
-            echo html_writer::end_tag('ul');
-            echo html_writer::end_div();
+
+            try {
+                // Generate insights using AI
+                $insights = \mod_cmi5launch\local\ai_insights::generate_insights(
+                    $insighttype,
+                    $cmi5launch,
+                    $enrolledusers,
+                    $DB
+                );
+
+                echo html_writer::start_div('alert alert-info');
+                echo html_writer::div(nl2br(htmlspecialchars($insights)), 'ai-insights-content');
+                echo html_writer::end_div();
+
+            } catch (\Exception $e) {
+                echo html_writer::start_div('alert alert-danger');
+                echo html_writer::tag('strong', 'Error generating insights: ');
+                echo html_writer::tag('p', $e->getMessage());
+                echo html_writer::end_div();
+            }
+
             echo html_writer::end_div();
         }
     } else {
