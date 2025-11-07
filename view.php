@@ -263,8 +263,8 @@ $table->caption = cmi5launch_get_term('au', true);  // "Activities" or configure
 $table->attributes['class'] = 'generaltable cmi5launch-table au-table';
 $table->head = array(
     get_string('name'),  // Generic "Name"
-    cmi5launch_get_term('satisfied', false) . ' ' . get_string('status'),  // "Completed Status"
-    get_string('grade'),  // Generic "Grade"
+    cmi5launch_get_term('satisfied', false) . ' Status',  // "Completed Status"
+    get_string('cmi5launchviewgradeheader', 'cmi5launch'),  // "Grade"
     get_string('cmi5launchviewregistrationheader', 'cmi5launch'),  // "Sessions"
 );
 

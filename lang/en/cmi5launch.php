@@ -392,3 +392,8 @@ $string['launching'] = 'Launching...';
 $string['launch_success'] = 'Activity launched! Complete it in the other tab.';
 $string['not_attempted'] = 'Not attempted';
 $string['in_progress'] = 'In Progress';
+
+// Button labels.
+$string['start'] = 'Start';
+$string['resume'] = 'Resume';
+$string['restart'] = 'Restart';

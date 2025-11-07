@@ -28,8 +28,8 @@ use mod_cmi5launch\local\progress;
 
 require_once(dirname(dirname(dirname(__FILE__))) . '/config.php');
 require('header.php');
-require_once("$CFG->dirroot/lib/outputcomponents.php");
-require_once ($CFG->dirroot . '/mod/cmi5launch/classes/local/errorover.php');
+require_once($CFG->dirroot . '/lib/outputcomponents.php');
+require_once($CFG->dirroot . '/mod/cmi5launch/classes/local/errorover.php');
 
 require_login($course, false, $cm);
 
@@ -352,12 +352,12 @@ if ($au->sessions && count(json_decode($au->sessions)) > $initialVisibleAUCount)
 
 echo "<div class='button-container' tabindex='0' onkeyup=\"key_test('" . $auid . "')\" id='cmi5launch_newattempt'>
         <button class='btn resume-btn' onclick=\"launch_session('" . $auid . "', false)\">"
-        . ($au->sessions === null ? get_string('start') . ' ' . $auterm : get_string('resume') . ' ' . $auterm)
+        . ($au->sessions === null ? get_string('start', 'cmi5launch') . ' ' . $auterm : get_string('resume', 'cmi5launch') . ' ' . $auterm)
         . "</button>";
 
 if ($au->sessions) {
     echo "<button class='btn restart-btn' onclick=\"launch_session('" . $auid . "', true)\">"
-        . get_string('restart') . ' ' . $auterm
+        . get_string('restart', 'cmi5launch') . ' ' . $auterm
         . "</button>";
 }
 
