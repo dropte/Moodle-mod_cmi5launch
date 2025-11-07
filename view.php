@@ -71,7 +71,7 @@ $embedmode = optional_param('embed', 0, PARAM_INT);
 
 // Check if auto-launch from course page
 $autolaunchauid = optional_param('launch', '', PARAM_TEXT);
-$autolaunchindex = optional_param('auindex', 0, PARAM_INT);
+$autolaunchindex = optional_param('auindex', -1, PARAM_INT); // -1 means not provided
 
 // Print the page header.
 $PAGE->set_url('/mod/cmi5launch/view.php', array('id' => $cm->id));
@@ -832,12 +832,30 @@ echo 'console.log("AUs loaded:", availableAUs);';
 // Auto-launch if coming from course page
 if (!empty($autolaunchauid)) {
     echo '
-    // Auto-launch activity from course page
+    // Auto-launch activity from course page by AU ID
     window.addEventListener("DOMContentLoaded", function() {
         console.log("Auto-launching AU:", "' . $autolaunchauid . '");
         setTimeout(function() {
             mod_cmi5launch_launchexperience("' . $autolaunchauid . '", "main");
         }, 500);
+    });
+    ';
+} else if ($autolaunchindex >= 0) {
+    // Auto-launch by index (0-based)
+    $actualIndex = $autolaunchindex;
+    echo '
+    // Auto-launch activity from course page by index
+    window.addEventListener("DOMContentLoaded", function() {
+        console.log("Auto-launching AU at index:", ' . $actualIndex . ');
+        if (availableAUs && availableAUs.length > ' . $actualIndex . ') {
+            var auToLaunch = availableAUs[' . $actualIndex . '];
+            console.log("Found AU to launch:", auToLaunch);
+            setTimeout(function() {
+                mod_cmi5launch_launchexperience(auToLaunch, "main");
+            }, 500);
+        } else {
+            console.error("No AU found at index ' . $actualIndex . '");
+        }
     });
     ';
 }

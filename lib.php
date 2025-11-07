@@ -444,20 +444,13 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     var needsInit = (needsinit === true || needsinit === 'true');
                     console.log('needsInit evaluated as:', needsInit);
 
-                    if (needsInit) {
-                        // Navigate to view.php to initialize
-                        console.log('Navigating to view.php for initialization');
-                        window.location.href = '/mod/cmi5launch/view.php?id=' + cmid;
-                        return false;
-                    }
-
-                    // Load activity directly in modal
-                    loadCMI5ModalActivity(cmid, auindex);
+                    // Always load in modal, passing needsinit status
+                    loadCMI5ModalActivity(cmid, auindex, needsInit);
 
                     return false;
                 };
 
-                function loadCMI5ModalActivity(cmid, auindex) {
+                function loadCMI5ModalActivity(cmid, auindex, needsInit) {
                     var activities = window.cmi5ModalActivities[cmid];
                     if (!activities || auindex < 0 || auindex >= activities.length) {
                         console.error('Invalid activity index:', auindex);
@@ -465,12 +458,21 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     }
 
                     var activity = activities[auindex];
-                    console.log('Loading activity:', activity);
+                    console.log('Loading activity:', activity, 'needsInit:', needsInit);
 
-                    // Build URL for launch.php
-                    var url = '/mod/cmi5launch/launch.php?launchform_registration=' +
+                    // Build URL - use view.php in embed mode for initialization, otherwise launch.php
+                    var url;
+                    if (needsInit) {
+                        // Load view.php in embed mode with auindex for auto-launch
+                        url = '/mod/cmi5launch/view.php?embed=1&id=' + cmid + '&auindex=' + auindex;
+                        console.log('Loading view.php in embed mode for initialization');
+                    } else {
+                        // Load activity directly via launch.php
+                        url = '/mod/cmi5launch/launch.php?launchform_registration=' +
                               encodeURIComponent(activity.id) +
                               '&restart=false&id=' + cmid;
+                        console.log('Loading launch.php directly');
+                    }
 
                     // Show modal and loading spinner
                     var modal = document.getElementById('cmi5-course-modal-' + cmid);
@@ -550,13 +552,21 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     var newIndex = currentIndex + direction;
 
                     if (newIndex >= 0 && newIndex < activities.length) {
-                        loadCMI5ModalActivity(cmid, newIndex);
+                        var activity = activities[newIndex];
+                        var needsInit = activity.needsinit === true || activity.needsinit === 'true';
+                        loadCMI5ModalActivity(cmid, newIndex, needsInit);
                     }
                 };
 
                 window.jumpCMI5Modal = function(cmid, index) {
                     if (index === '') return;
-                    loadCMI5ModalActivity(cmid, parseInt(index));
+                    var activities = window.cmi5ModalActivities[cmid];
+                    var newIndex = parseInt(index);
+                    if (activities && newIndex >= 0 && newIndex < activities.length) {
+                        var activity = activities[newIndex];
+                        var needsInit = activity.needsinit === true || activity.needsinit === 'true';
+                        loadCMI5ModalActivity(cmid, newIndex, needsInit);
+                    }
                 };
 
                 window.hideCMI5Loading = function(cmid) {
