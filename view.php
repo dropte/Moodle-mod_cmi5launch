@@ -153,11 +153,19 @@ $pollinginterval = $pollinginterval * 1000; // Convert to milliseconds.
             $('#progress-status').show();
             $('#progress-spinner').show();
 
-            $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>', function() {
-                // Hide spinner and update timestamp
+            $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>', function(response, status, xhr) {
+                // Always hide spinner, regardless of success or failure
                 $('#progress-spinner').hide();
-                lastUpdateTime = Date.now();
-                updateTimestamp();
+
+                if (status === "success") {
+                    lastUpdateTime = Date.now();
+                    updateTimestamp();
+                } else if (status === "error") {
+                    console.log("Progress check failed: " + xhr.status + " " + xhr.statusText);
+                    // Still update timestamp to show we tried
+                    lastUpdateTime = Date.now();
+                    updateTimestamp();
+                }
             });
         }
 

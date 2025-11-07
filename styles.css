@@ -32,12 +32,14 @@
 
 /* Caption styling */
 .cmi5launch-table caption {
-    font-size: 24px;           /* Larger font size for prominence */
-    font-weight: 700;          /* Make it bold */
+    font-size: 20px;           /* Moderate font size */
+    font-weight: 600;          /* Semi-bold */
     color: #333;               /* Dark color for readability */
-    padding: 10px;             /* Add padding for spacing */
-    text-align: left;        /* Center-align the caption */
-    text-transform: uppercase; /* Optional: make it uppercase for emphasis */
+    padding: 12px 10px;        /* Add padding for spacing */
+    text-align: left;          /* Left-align the caption */
+    text-transform: none;      /* Normal case, not shouty */
+    background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 2px solid #4a90e2;
 }
 
 .cmi5launch-table tr {
@@ -88,19 +90,74 @@
     color: #333;
 }
 
-/* Width customization for the second column */
+/* Column width customization */
+.cmi5launch-table .date-column {
+    width: 20%;
+    white-space: nowrap;
+}
+
 .cmi5launch-table .progress-column {
-    width: 65%; /* Adjust width as needed */
+    width: 60%; /* Adjust width as needed */
+}
+
+.cmi5launch-table .score-column {
+    width: 10%;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Smaller button variant */
+.btn-sm {
+    padding: 6px 12px !important;
+    font-size: 14px !important;
 }
 
 
 /* Hidden content styling */
 .hidden-content {
     margin-top: 8px;
-    padding: 8px;
+    padding: 12px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 5px;
+}
+
+/* Progress details formatting */
+.progress-details {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.progress-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.progress-list li {
+    padding: 6px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.progress-list li:last-child {
+    border-bottom: none;
+}
+
+.progress-success {
+    color: #28a745;
+}
+
+.progress-error {
+    color: #dc3545;
+}
+
+.progress-info {
+    color: #555;
+}
+
+.text-muted {
+    color: #6c757d;
+    font-style: italic;
 }
 
 /* General button container styling */

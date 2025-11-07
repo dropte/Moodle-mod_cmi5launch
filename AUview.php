@@ -104,10 +104,10 @@ $auterm = cmi5launch_get_term('au', false);
             const content = document.getElementById(progressCellId);
             if (content.style.display === 'none' || content.style.display === '') {
                 content.style.display = 'block';
-                content.previousElementSibling.querySelector('button').textContent = 'Hide Progress';
+                content.previousElementSibling.querySelector('button').textContent = '<?php echo get_string('hide_details', 'cmi5launch'); ?>';
             } else {
                 content.style.display = 'none';
-                content.previousElementSibling.querySelector('button').textContent = 'View Progress';
+                content.previousElementSibling.querySelector('button').textContent = '<?php echo get_string('view_details', 'cmi5launch'); ?>';
             }
         }
 
@@ -177,11 +177,19 @@ $auterm = cmi5launch_get_term('au', false);
             $('#progress-status').show();
             $('#progress-spinner').show();
 
-            $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>', function() {
-                // Hide spinner and update timestamp
+            $('#cmi5launch_completioncheck').load('completion_check.php?id=<?php echo $id ?>&n=<?php echo $n ?>', function(response, status, xhr) {
+                // Always hide spinner, regardless of success or failure
                 $('#progress-spinner').hide();
-                lastUpdateTime = Date.now();
-                updateTimestamp();
+
+                if (status === "success") {
+                    lastUpdateTime = Date.now();
+                    updateTimestamp();
+                } else if (status === "error") {
+                    console.log("Progress check failed: " + xhr.status + " " + xhr.statusText);
+                    // Still update timestamp to show we tried
+                    lastUpdateTime = Date.now();
+                    updateTimestamp();
+                }
             });
         }
 
@@ -277,13 +285,13 @@ if (!is_null($au->sessions)) {
        $table = new html_table();
        $table->id = 'cmi5launch_auSessionTable';
        $table->attributes['class'] = 'generaltable cmi5launch-table launch-table';
-       $table->caption = get_string('modulenameplural', 'cmi5launch');
+       $table->caption = get_string('session_history', 'cmi5launch');
        $table->head = array(
-           get_string('cmi5launchviewfirstlaunched', 'cmi5launch'),
-           get_string('cmi5launchviewprogress', 'cmi5launch'),
-           get_string('cmi5launchviewgradeheader', 'cmi5launch'),
+           get_string('attempt_date', 'cmi5launch'),
+           get_string('attempt_progress', 'cmi5launch'),
+           get_string('attempt_score', 'cmi5launch'),
        );
-       $table->colclasses = array('', 'progress-column', '');
+       $table->colclasses = array('date-column', 'progress-column', 'score-column');
 
 
        // Decode and iterate through session IDs
@@ -302,12 +310,35 @@ if (!is_null($au->sessions)) {
                    $sessioninfo[] = "<span class='date-cell'>" . $createdAt->format('D d M Y H:i:s') . "</span>";
                }
 
-               // Add minimized progress information with a toggle button
-               $progressContent = "<pre>" . implode("\n ", json_decode($session->progress)) . "</pre>";
+               // Add formatted progress information with a toggle button
+               $progressData = json_decode($session->progress);
+               $progressContent = "<div class='progress-details'>";
+
+               // Format the progress data in a more readable way
+               if (!empty($progressData)) {
+                   $progressContent .= "<ul class='progress-list'>";
+                   foreach ($progressData as $item) {
+                       // Clean up the item for display
+                       $cleanItem = htmlspecialchars($item);
+                       // Add icon based on content
+                       if (stripos($item, 'completed') !== false || stripos($item, 'passed') !== false) {
+                           $progressContent .= "<li class='progress-success'>✓ " . $cleanItem . "</li>";
+                       } else if (stripos($item, 'failed') !== false || stripos($item, 'error') !== false) {
+                           $progressContent .= "<li class='progress-error'>✗ " . $cleanItem . "</li>";
+                       } else {
+                           $progressContent .= "<li class='progress-info'>• " . $cleanItem . "</li>";
+                       }
+                   }
+                   $progressContent .= "</ul>";
+               } else {
+                   $progressContent .= "<p class='text-muted'>No detailed progress information available.</p>";
+               }
+               $progressContent .= "</div>";
+
                $progressCellId = "progress-cell-" . $sessionid;
 
                $sessioninfo[] = "
-                   <button type='button' class='btn resume-btn'' onclick='toggleProgress(\"$progressCellId\")'>View Progress</button>
+                   <button type='button' class='btn btn-sm resume-btn' onclick='toggleProgress(\"$progressCellId\")'>" . get_string('view_details', 'cmi5launch') . "</button>
                    <div id='$progressCellId' class='progress-cell hidden-content' style='display: none;'>$progressContent</div>
                ";
 

@@ -395,5 +395,13 @@ $string['in_progress'] = 'In Progress';
 
 // Button labels.
 $string['start'] = 'Start';
-$string['resume'] = 'Resume';
-$string['restart'] = 'Restart';
+$string['resume'] = 'Continue';
+$string['restart'] = 'Start Over';
+
+// Session history.
+$string['session_history'] = 'Your Attempts';
+$string['attempt_date'] = 'Date';
+$string['attempt_progress'] = 'Details';
+$string['attempt_score'] = 'Score';
+$string['view_details'] = 'View Details';
+$string['hide_details'] = 'Hide Details';
