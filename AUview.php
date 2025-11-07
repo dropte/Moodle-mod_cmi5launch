@@ -131,16 +131,74 @@ $auterm = cmi5launch_get_term('au', false);
             // Construct the URL with parameters
             const url = `launch.php?launchform_registration=${encodeURIComponent(auid)}&restart=${encodeURIComponent(restart)}&id=<?php echo $id; ?>&n=<?php echo $n; ?>`;
 
-            // Open the URL in a new tab
-            window.open(url, '_blank');
+            // Open in modal player instead of new tab
+            openPlayerModal(url);
 
-            // Show success notification and start checking for updates (no page reload)
+            // Show success notification and start checking for updates
             setTimeout(function() {
-                showNotification('<?php echo get_string('launch_success', 'cmi5launch'); ?>', 'success');
-                // Start faster polling for updates
+                showNotification('Activity loaded in player', 'success');
                 checkProgress();
-            }, 1500);
+            }, 500);
         }
+
+        function openPlayerModal(url) {
+            // Create modal if it doesn't exist
+            if (!document.getElementById('cmi5-player-modal')) {
+                const modal = document.createElement('div');
+                modal.id = 'cmi5-player-modal';
+                modal.className = 'cmi5-modal';
+                modal.innerHTML = `
+                    <div class="cmi5-modal-content">
+                        <div class="cmi5-modal-header">
+                            <h3>Activity Player</h3>
+                            <button class="cmi5-modal-close" onclick="closePlayerModal()">&times;</button>
+                        </div>
+                        <div class="cmi5-modal-body">
+                            <iframe id="cmi5-player-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            // Set iframe source and show modal
+            const iframe = document.getElementById('cmi5-player-iframe');
+            iframe.src = url;
+
+            const modal = document.getElementById('cmi5-player-modal');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closePlayerModal() {
+            const modal = document.getElementById('cmi5-player-modal');
+            const iframe = document.getElementById('cmi5-player-iframe');
+
+            if (modal) {
+                modal.style.display = 'none';
+                iframe.src = ''; // Clear iframe to stop any running content
+                document.body.style.overflow = ''; // Restore scrolling
+
+                // Refresh progress after closing
+                showNotification('Checking progress...', 'info');
+                checkProgress();
+            }
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePlayerModal();
+            }
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('cmi5-player-modal');
+            if (e.target === modal) {
+                closePlayerModal();
+            }
+        });
 
         function showNotification(message, type) {
             type = type || 'info';
