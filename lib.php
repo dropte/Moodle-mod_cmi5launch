@@ -195,9 +195,15 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     error_log('CMI5: After unwrap, AU type: ' . gettype($au));
 
                     $title = '';
+                    $auid = '';
 
-                    // Try to extract title from various possible structures
+                    // Try to extract title and ID from various possible structures
                     if (is_object($au)) {
+                        // Extract AU ID
+                        if (isset($au->id)) {
+                            $auid = $au->id;
+                        }
+
                         if (isset($au->title)) {
                             // Title structure: title: [{ text: "Activity Name" }]
                             if (is_array($au->title) && count($au->title) > 0) {
@@ -225,11 +231,16 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         $title = 'Activity ' . ($index + 1);
                     }
 
-                    error_log('CMI5: About to add activity with title: ' . $title . ', index: ' . $index);
+                    // Fallback ID if not found
+                    if (empty($auid)) {
+                        $auid = 'au_' . $index;
+                    }
+
+                    error_log('CMI5: About to add activity with title: ' . $title . ', id: ' . $auid . ', index: ' . $index);
 
                     // Always add the activity
                     $activities[] = array(
-                        'id' => 'init_' . $index,  // Special ID to indicate needs init
+                        'id' => $auid,  // Use actual AU ID from manifest
                         'title' => $title,
                         'index' => $index,
                         'needsinit' => true,
@@ -256,9 +267,15 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                     error_log('CMI5: After unwrap, AU type: ' . gettype($au));
 
                     $title = '';
+                    $auid = '';
 
-                    // Try to extract title from various possible structures
+                    // Try to extract title and ID from various possible structures
                     if (is_object($au)) {
+                        // Extract AU ID
+                        if (isset($au->id)) {
+                            $auid = $au->id;
+                        }
+
                         if (isset($au->title)) {
                             // Title structure: title: [{ text: "Activity Name" }]
                             if (is_array($au->title) && count($au->title) > 0) {
@@ -286,11 +303,16 @@ function cmi5launch_get_coursemodule_info($coursemodule) {
                         $title = 'Activity ' . ($index + 1);
                     }
 
-                    error_log('CMI5: About to add activity with title: ' . $title . ', index: ' . $index);
+                    // Fallback ID if not found
+                    if (empty($auid)) {
+                        $auid = 'au_' . $index;
+                    }
+
+                    error_log('CMI5: About to add activity with title: ' . $title . ', id: ' . $auid . ', index: ' . $index);
 
                     // Always add the activity
                     $activities[] = array(
-                        'id' => 'init_' . $index,  // Special ID to indicate needs init
+                        'id' => $auid,  // Use actual AU ID from manifest
                         'title' => $title,
                         'index' => $index,
                         'needsinit' => true,
