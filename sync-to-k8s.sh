@@ -28,6 +28,7 @@ kubectl cp setup.php $POD_NAME:$PLUGIN_PATH/setup.php
 kubectl cp tenantsetup.php $POD_NAME:$PLUGIN_PATH/tenantsetup.php
 kubectl cp tokensetup.php $POD_NAME:$PLUGIN_PATH/tokensetup.php
 kubectl cp admin_dashboard.php $POD_NAME:$PLUGIN_PATH/admin_dashboard.php
+kubectl cp session_report.php $POD_NAME:$PLUGIN_PATH/session_report.php
 kubectl cp version.php $POD_NAME:$PLUGIN_PATH/version.php
 kubectl cp styles.css $POD_NAME:$PLUGIN_PATH/styles.css
 

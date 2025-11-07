@@ -182,6 +182,12 @@ if ($aurecord->sessions != null || false) {
     foreach ($sessions as $sessionid) {
 
         $session = $updatesession($progress, $cmi5, $sessionid, $cmi5launch->id, $user);
+
+        // Skip if session doesn't exist (may have been reset)
+        if (!$session) {
+            continue;
+        }
+
         // Add score to array for AU.
         $sessionscores[] = $session->score;
 
