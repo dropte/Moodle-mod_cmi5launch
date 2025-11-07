@@ -208,14 +208,23 @@ if ($currenttab === 'overview') {
     echo $OUTPUT->heading('User Progress Details', 3);
 
     $table = new html_table();
-    $table->head = array('User', 'Status', 'Activities Completed', 'Last Access', 'Actions');
+    $table->head = array('', 'User', 'Status', 'Activities Completed', 'Last Access', 'Actions');
     $table->attributes['class'] = 'generaltable cmi5-admin-table';
 
     foreach ($enrolledusers as $user) {
-        $row = array();
+        $row = new html_table_row();
+        $row->attributes['class'] = 'user-row';
+        $row->attributes['data-userid'] = $user->id;
+
+        // Expand/collapse icon
+        $row->cells[] = html_writer::tag('span', '+', array(
+            'class' => 'expand-icon',
+            'style' => 'cursor: pointer; font-weight: bold; font-size: 16px; user-select: none;',
+            'title' => 'Show session details'
+        ));
 
         // User name with profile link
-        $row[] = html_writer::link(
+        $row->cells[] = html_writer::link(
             new moodle_url('/user/profile.php', array('id' => $user->id)),
             fullname($user)
         );
@@ -245,19 +254,19 @@ if ($currenttab === 'overview') {
                 $statusclass = 'badge-success';
             }
 
-            $row[] = html_writer::tag('span', $status, array('class' => 'badge ' . $statusclass));
-            $row[] = $completedaus . ' / ' . $totalaus;
+            $row->cells[] = html_writer::tag('span', $status, array('class' => 'badge ' . $statusclass));
+            $row->cells[] = $completedaus . ' / ' . $totalaus;
 
             // Last access
             if (!empty($usercourse->timemodified)) {
-                $row[] = userdate($usercourse->timemodified);
+                $row->cells[] = userdate($usercourse->timemodified);
             } else {
-                $row[] = 'Never';
+                $row->cells[] = 'Never';
             }
         } else {
-            $row[] = html_writer::tag('span', 'Not Started', array('class' => 'badge badge-secondary'));
-            $row[] = '0 / 0';
-            $row[] = 'Never';
+            $row->cells[] = html_writer::tag('span', 'Not Started', array('class' => 'badge badge-secondary'));
+            $row->cells[] = '0 / 0';
+            $row->cells[] = 'Never';
         }
 
         // Actions
@@ -270,12 +279,111 @@ if ($currenttab === 'overview') {
             ));
             $actions .= html_writer::link($reseturl, 'Reset', array('class' => 'btn btn-sm btn-danger'));
         }
-        $row[] = $actions;
+        $row->cells[] = $actions;
 
         $table->data[] = $row;
+
+        // Add expandable row with session details
+        $detailrow = new html_table_row();
+        $detailrow->attributes['class'] = 'session-details-row hidden-row';
+        $detailrow->attributes['data-userid'] = $user->id;
+        $detailrow->attributes['style'] = 'display: none;';
+
+        // Create session details content
+        $sessionscontent = '';
+        $sessions = $DB->get_records('cmi5launch_sessions', array(
+            'moodlecourseid' => $cm->instance,
+            'userid' => $user->id
+        ), 'createdat DESC');
+
+        if ($sessions && count($sessions) > 0) {
+            $sessionscontent .= html_writer::start_tag('div', array('style' => 'padding: 10px;'));
+            $sessionscontent .= html_writer::tag('strong', 'Session Details (' . count($sessions) . ' sessions)');
+            $sessionscontent .= html_writer::start_tag('table', array(
+                'class' => 'table table-sm table-bordered',
+                'style' => 'margin-top: 10px; background: #f9f9f9;'
+            ));
+            $sessionscontent .= html_writer::start_tag('thead');
+            $sessionscontent .= html_writer::start_tag('tr');
+            $sessionscontent .= html_writer::tag('th', 'Session ID');
+            $sessionscontent .= html_writer::tag('th', 'Created');
+            $sessionscontent .= html_writer::tag('th', 'Duration');
+            $sessionscontent .= html_writer::tag('th', 'Score');
+            $sessionscontent .= html_writer::tag('th', 'Completed');
+            $sessionscontent .= html_writer::tag('th', 'Passed');
+            $sessionscontent .= html_writer::tag('th', 'Status');
+            $sessionscontent .= html_writer::end_tag('tr');
+            $sessionscontent .= html_writer::end_tag('thead');
+            $sessionscontent .= html_writer::start_tag('tbody');
+
+            foreach ($sessions as $session) {
+                $sessionscontent .= html_writer::start_tag('tr');
+                $sessionscontent .= html_writer::tag('td', $session->sessionid);
+                $sessionscontent .= html_writer::tag('td', !empty($session->createdat) ? date('Y-m-d H:i', strtotime($session->createdat)) : 'N/A');
+                $sessionscontent .= html_writer::tag('td', !empty($session->duration) ? $session->duration : 'N/A');
+                $sessionscontent .= html_writer::tag('td', !is_null($session->score) ? $session->score : 'N/A');
+                $sessionscontent .= html_writer::tag('td', $session->iscompleted ? 'Yes' : 'No');
+                $sessionscontent .= html_writer::tag('td', $session->ispassed ? 'Yes' : 'No');
+
+                // Determine status
+                $status = array();
+                if ($session->iscompleted) $status[] = 'Completed';
+                if ($session->ispassed) $status[] = 'Passed';
+                if ($session->isfailed) $status[] = 'Failed';
+                if ($session->isterminated) $status[] = 'Terminated';
+                if ($session->isabandoned) $status[] = 'Abandoned';
+                $statustext = !empty($status) ? implode(', ', $status) : 'Active';
+
+                $sessionscontent .= html_writer::tag('td', $statustext);
+                $sessionscontent .= html_writer::end_tag('tr');
+            }
+
+            $sessionscontent .= html_writer::end_tag('tbody');
+            $sessionscontent .= html_writer::end_tag('table');
+            $sessionscontent .= html_writer::end_tag('div');
+        } else {
+            $sessionscontent = html_writer::div('No sessions found for this user.', '', array('style' => 'padding: 10px; color: #666;'));
+        }
+
+        $detailcell = new html_table_cell($sessionscontent);
+        $detailcell->colspan = 6;
+        $detailrow->cells[] = $detailcell;
+
+        $table->data[] = $detailrow;
     }
 
     echo html_writer::table($table);
+
+    // Add JavaScript for expand/collapse functionality
+    echo html_writer::start_tag('script');
+    ?>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add click handlers to expand icons
+        document.querySelectorAll('.expand-icon').forEach(function(icon) {
+            icon.addEventListener('click', function() {
+                const userRow = this.closest('tr');
+                const userid = userRow.getAttribute('data-userid');
+                const detailRow = document.querySelector('.session-details-row[data-userid="' + userid + '"]');
+
+                if (detailRow) {
+                    if (detailRow.style.display === 'none') {
+                        // Expand
+                        detailRow.style.display = '';
+                        this.textContent = '−';
+                        this.setAttribute('title', 'Hide session details');
+                    } else {
+                        // Collapse
+                        detailRow.style.display = 'none';
+                        this.textContent = '+';
+                        this.setAttribute('title', 'Show session details');
+                    }
+                }
+            });
+        });
+    });
+    <?php
+    echo html_writer::end_tag('script');
+
     echo html_writer::end_div(); // overview
 
 } else if ($currenttab === 'analytics') {
