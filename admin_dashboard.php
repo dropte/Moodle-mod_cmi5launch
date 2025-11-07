@@ -415,40 +415,30 @@ if ($currenttab === 'overview') {
     $aiprovider = get_config('cmi5launch', 'ai_provider');
     $apikey = get_config('cmi5launch', 'ai_api_key');
 
-    if (!empty($aiprovider) && !empty($apikey)) {
-        echo $OUTPUT->heading('Generate Insights', 4);
+    // Local LLM doesn't require API key
+    $isconfigured = !empty($aiprovider) && ($aiprovider === 'local' || !empty($apikey));
 
-        echo html_writer::start_tag('form', array('method' => 'post', 'action' => $PAGE->url->out()));
-        echo html_writer::input_hidden_params($PAGE->url);
-        echo html_writer::empty_tag('input', array('type' => 'hidden', 'name' => 'action', 'value' => 'generate_insights'));
-        echo html_writer::empty_tag('input', array('type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()));
+    if ($isconfigured) {
+        echo $OUTPUT->heading('AI-Generated Insights', 4);
+        echo html_writer::tag('p', 'Automatically generated insights based on current activity data.');
 
-        echo html_writer::start_div('form-group');
-        echo html_writer::tag('label', 'Insight Type:');
-        echo html_writer::start_tag('select', array('name' => 'insight_type', 'class' => 'form-control'));
-        echo html_writer::tag('option', 'Overall Progress Analysis', array('value' => 'progress'));
-        echo html_writer::tag('option', 'User Engagement Patterns', array('value' => 'engagement'));
-        echo html_writer::tag('option', 'Learning Recommendations', array('value' => 'recommendations'));
-        echo html_writer::tag('option', 'At-Risk Users', array('value' => 'at_risk'));
-        echo html_writer::end_tag('select');
-        echo html_writer::end_div();
+        // Define all insight types
+        $insighttypes = array(
+            'progress' => 'Overall Progress Analysis',
+            'engagement' => 'User Engagement Patterns',
+            'recommendations' => 'Learning Recommendations',
+            'at_risk' => 'At-Risk Users'
+        );
 
-        echo html_writer::tag('button', 'Generate Insights', array('type' => 'submit', 'class' => 'btn btn-primary'));
-        echo html_writer::end_tag('form');
-
-        // Display generated insights if available
-        if (optional_param('action', '', PARAM_ALPHA) === 'generate_insights') {
-            require_sesskey();
-
-            $insighttype = required_param('insight_type', PARAM_ALPHA);
-
-            echo html_writer::start_div('mt-4');
-            echo $OUTPUT->heading('Generated Insights', 4);
+        // Auto-generate all insights
+        foreach ($insighttypes as $type => $title) {
+            echo html_writer::start_div('insight-section mb-4');
+            echo $OUTPUT->heading($title, 5);
 
             try {
                 // Generate insights using AI
                 $insights = \mod_cmi5launch\local\ai_insights::generate_insights(
-                    $insighttype,
+                    $type,
                     $cmi5launch,
                     $enrolledusers,
                     $DB
@@ -460,12 +450,12 @@ if ($currenttab === 'overview') {
 
             } catch (\Exception $e) {
                 echo html_writer::start_div('alert alert-danger');
-                echo html_writer::tag('strong', 'Error generating insights: ');
-                echo html_writer::tag('p', $e->getMessage());
+                echo html_writer::tag('strong', 'Error: ');
+                echo html_writer::tag('span', $e->getMessage());
                 echo html_writer::end_div();
             }
 
-            echo html_writer::end_div();
+            echo html_writer::end_div(); // insight-section
         }
     } else {
         echo html_writer::start_div('alert alert-warning');
